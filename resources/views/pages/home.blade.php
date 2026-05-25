@@ -67,7 +67,7 @@
               @php
                 $productImagePath = $product->image ? public_path('images/products/' . $product->image) : null;
                 $productImageUrl = $productImagePath && file_exists($productImagePath)
-                  ? '/images/products/' . $product->image . '?v=' . filemtime($productImagePath)
+                  ? asset('images/products/' . $product->image)
                   : '';
               @endphp
 

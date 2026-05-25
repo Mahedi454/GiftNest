@@ -3,12 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\DemoProductService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Throwable;
 
 class CartController extends Controller
 {
+    public function __construct(private readonly DemoProductService $demoProducts) {}
+
     public function index(Request $request): View
     {
         $cart = collect($request->session()->get('cart', []));
@@ -21,8 +25,16 @@ class CartController extends Controller
         ]);
     }
 
-    public function store(Request $request, Product $product): RedirectResponse
+    public function store(Request $request, string $product): RedirectResponse
     {
+        $product = $this->findProduct($product);
+
+        if (! $product) {
+            return redirect()
+                ->route('shop')
+                ->with('status', 'Demo mode: this product is not available.');
+        }
+
         $cart = $request->session()->get('cart', []);
         $productKey = (string) $product->id;
         $quantity = max(1, (int) $request->input('quantity', 1));
@@ -49,10 +61,10 @@ class CartController extends Controller
             ->with('status', 'Product added to cart.');
     }
 
-    public function update(Request $request, Product $product): RedirectResponse
+    public function update(Request $request, string $product): RedirectResponse
     {
         $cart = $request->session()->get('cart', []);
-        $productKey = (string) $product->id;
+        $productKey = (string) $product;
 
         if (! isset($cart[$productKey])) {
             return redirect()->route('cart');
@@ -69,16 +81,34 @@ class CartController extends Controller
             ->with('status', 'Cart updated successfully.');
     }
 
-    public function destroy(Request $request, Product $product): RedirectResponse
+    public function destroy(Request $request, string $product): RedirectResponse
     {
         $cart = $request->session()->get('cart', []);
 
-        unset($cart[(string) $product->id]);
+        unset($cart[(string) $product]);
 
         $request->session()->put('cart', $cart);
 
         return redirect()
             ->route('cart')
             ->with('status', 'Item removed from cart.');
+    }
+
+    private function findProduct(string $product): ?object
+    {
+        try {
+            $realProduct = Product::query()
+                ->where('is_active', true)
+                ->whereKey($product)
+                ->first();
+
+            if ($realProduct) {
+                return $realProduct;
+            }
+        } catch (Throwable) {
+            //
+        }
+
+        return $this->demoProducts->findProduct($product);
     }
 }

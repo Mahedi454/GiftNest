@@ -28,7 +28,7 @@
               @php
                 $imagePath = $item['image'] ? public_path('images/products/' . $item['image']) : null;
                 $imageUrl = $imagePath && file_exists($imagePath)
-                  ? '/images/products/' . $item['image'] . '?v=' . filemtime($imagePath)
+                  ? asset('images/products/' . $item['image'])
                   : '';
               @endphp
 

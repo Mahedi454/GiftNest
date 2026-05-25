@@ -21,6 +21,8 @@
 
         @if (session('status') === 'profile-updated')
           <div class="chip chip--strong">Profile updated successfully.</div>
+        @elseif (session('status'))
+          <div class="chip chip--strong">{{ session('status') }}</div>
         @endif
 
         <form class="auth__form" method="POST" action="{{ route('profile.update') }}">

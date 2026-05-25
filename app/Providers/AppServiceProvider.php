@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,7 +23,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $compiledViewsPath = config('view.compiled');
+
+        if (is_string($compiledViewsPath) && ! is_dir($compiledViewsPath)) {
+            @mkdir($compiledViewsPath, 0775, true);
+        }
+
         if ($this->app->runningInConsole()) {
+            return;
+        }
+
+        if ((bool) env('VERCEL')) {
             return;
         }
 
@@ -30,17 +41,21 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        if (! Schema::hasTable('users')) {
+        try {
+            if (! Schema::hasTable('users')) {
+                return;
+            }
+
+            User::updateOrCreate(
+                ['email' => 'admin@giftnest.com'],
+                [
+                    'name' => 'GiftNest Admin',
+                    'password' => Hash::make('password'),
+                    'role' => 'admin',
+                ],
+            );
+        } catch (Throwable) {
             return;
         }
-
-        User::updateOrCreate(
-            ['email' => 'admin@giftnest.com'],
-            [
-                'name' => 'GiftNest Admin',
-                'password' => Hash::make('password'),
-                'role' => 'admin',
-            ],
-        );
     }
 }

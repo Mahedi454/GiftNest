@@ -2,6 +2,7 @@
   @php
     $cartCount = collect(session('cart', []))->sum('quantity');
     $user = auth()->user();
+    $isDemoMode = app(\App\Services\DemoProductService::class)->isVercelDemo();
     $userInitials = $user
       ? collect(explode(' ', trim($user->name)))
           ->filter()
@@ -40,7 +41,13 @@
           <a class="btn btn--ghost" href="{{ route('admin.index') }}">Admin</a>
         @endif
         <div class="profilemenu" data-profile-menu>
-          <button class="profilemenu__trigger" type="button" aria-label="Open profile menu" data-profile-menu-toggle>
+          <button
+            class="profilemenu__trigger"
+            type="button"
+            aria-label="Open profile menu"
+            aria-expanded="false"
+            data-profile-menu-toggle
+          >
             <span class="profilemenu__avatar">{{ $userInitials }}</span>
             <span class="profilemenu__meta">
               <span class="profilemenu__name">{{ $user->name }}</span>
@@ -60,17 +67,29 @@
           </div>
         </div>
       @else
+        @if ($isDemoMode)
+          <a class="btn btn--ghost" href="{{ route('admin.index') }}">Admin</a>
+          <a class="btn btn--ghost" href="{{ route('profile.edit') }}">Profile</a>
+        @endif
         <a class="btn btn--ghost" href="{{ route('login') }}">Login</a>
         <a class="btn" href="{{ route('register') }}">Sign up</a>
       @endauth
 
-      <button class="hamburger" type="button" aria-label="Open menu" data-mobile-menu-toggle>
+      <button
+        class="hamburger"
+        type="button"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="site-mobile-menu"
+        data-mobile-menu-toggle
+        data-menu-target="site-mobile-menu"
+      >
         <img class="hamburger__icon" src="/line-3-svgrepo-com.svg" alt="" aria-hidden="true" />
       </button>
     </div>
   </div>
 
-  <div class="mobilemenu" data-mobile-menu hidden>
+  <div class="mobilemenu" id="site-mobile-menu" data-mobile-menu hidden>
     <div class="container mobilemenu__inner">
       <div class="mobilemenu__eyebrow">Simple shopping, clean flow</div>
       <a href="{{ route('home') }}">Home</a>
@@ -90,6 +109,10 @@
             <button class="btn btn--ghost" type="submit">Logout</button>
           </form>
         @else
+          @if ($isDemoMode)
+            <a class="btn btn--ghost" href="{{ route('admin.index') }}">Admin</a>
+            <a class="btn btn--ghost" href="{{ route('profile.edit') }}">Profile</a>
+          @endif
           <a class="btn btn--ghost" href="{{ route('login') }}">Login</a>
           <a class="btn" href="{{ route('register') }}">Sign up</a>
         @endauth

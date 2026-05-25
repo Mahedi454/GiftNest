@@ -4,6 +4,7 @@
 
 @php
   $total = $subtotal + $shipping;
+  $checkoutUser = auth()->user() ?? app(\App\Services\DemoProductService::class)->demoUser();
 @endphp
 
 @section('content')
@@ -26,7 +27,7 @@
         <div class="formgrid">
           <label class="field">
             <span class="field__label">Name</span>
-            <input class="input" type="text" name="name" value="{{ old('name', auth()->user()->name) }}" required />
+            <input class="input" type="text" name="name" value="{{ old('name', $checkoutUser->name) }}" required />
             @error('name') <span class="muted">{{ $message }}</span> @enderror
           </label>
 

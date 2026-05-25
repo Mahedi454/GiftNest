@@ -82,6 +82,7 @@
 .iconbtn .badge{position:absolute; top:-6px; right:-6px;}
 .profilemenu{
   position:relative;
+  min-width:0;
 }
 .profilemenu__trigger{
   display:flex;
@@ -94,6 +95,8 @@
   box-shadow:0 12px 26px rgba(58,139,149,.08);
   cursor:pointer;
   transition:var(--transition);
+  min-width:0;
+  max-width:100%;
 }
 .profilemenu__trigger:hover{
   transform:translateY(-2px);
@@ -116,9 +119,10 @@
   flex-direction:column;
   align-items:flex-start;
   min-width:0;
+  overflow:hidden;
 }
 .profilemenu__name{
-  max-width:120px;
+  max-width:140px;
   font-weight:800;
   color:var(--text);
   white-space:nowrap;
@@ -827,16 +831,33 @@
   backdrop-filter:blur(16px);
 }
 .admin-topbar__inner{height:72px; display:flex; align-items:center; justify-content:space-between; gap:12px;}
-.admin-topbar__actions{display:flex; gap:12px; align-items:center;}
-.admin-nav{display:flex; gap:10px;}
+.admin-topbar__actions{display:flex; gap:12px; align-items:center; min-width:0;}
+.admin-nav{display:flex; gap:10px; min-width:0; flex-wrap:wrap; justify-content:flex-end;}
 .admin-nav a{padding:10px 10px; border-radius:12px; color:var(--muted);}
 .admin-nav a:hover{background:rgba(255,107,107,.08); color:var(--text);}
+.admin-mobilemenu{
+  margin-top:12px;
+  border-top:1px solid var(--stroke);
+  background:rgba(255,245,245,.92);
+  backdrop-filter:blur(16px);
+}
+.admin-hamburger{display:none;}
 .admin-feedback{
   margin-bottom:16px;
   padding:16px 18px;
 }
+.admin-form-error{
+  margin-bottom:18px;
+  padding:14px 16px;
+  border:1px solid rgba(227,91,79,.22);
+  border-radius:18px;
+  background:rgba(227,91,79,.08);
+  color:#8f3028;
+  font-weight:700;
+}
 .admin-product-form{
   padding:24px;
+  overflow:hidden;
 }
 .admin-product-editor__grid{
   display:grid;
@@ -867,6 +888,7 @@
 .admin-preview{
   padding:18px;
   border-radius:28px;
+  min-width:0;
 }
 .admin-preview__label{
   font-size:12px;
@@ -1029,6 +1051,7 @@
 }
 .admin-order-card{
   padding:22px;
+  min-width:0;
 }
 .admin-order-card__top{
   display:flex;
@@ -1041,6 +1064,9 @@
   grid-template-columns:repeat(4, minmax(0,1fr));
   gap:16px;
   margin-top:18px;
+}
+.admin-order-card__grid > div{
+  min-width:0;
 }
 .admin-order-card__label{
   font-size:12px;

@@ -8,6 +8,10 @@
     @method($formMethod)
   @endif
 
+  @error('product')
+    <div class="admin-form-error" role="alert">{{ $message }}</div>
+  @enderror
+
   <div class="admin-product-editor__grid">
     <div class="admin-product-editor__fields">
       <div class="grid grid--2">
@@ -48,7 +52,7 @@
 
         <label class="field">
           <span class="field__label">Current image name</span>
-          <input class="input" type="text" name="image" value="{{ $currentImage }}" placeholder="Stored image filename" />
+          <input class="input" type="text" name="image" value="{{ $currentImage }}" placeholder="Stored image filename (optional)" />
           @error('image') <span class="muted">{{ $message }}</span> @enderror
         </label>
       </div>
@@ -81,7 +85,7 @@
       <div class="admin-preview__label">Live preview</div>
       <div class="admin-preview__media" data-preview-media>
         @if ($currentImage)
-          <img src="/images/products/{{ $currentImage }}" alt="{{ old('name', $product->name ?: 'Product preview') }}" />
+          <img src="{{ asset('images/products/' . $currentImage) }}" alt="{{ old('name', $product->name ?: 'Product preview') }}" />
         @else
           <div class="admin-preview__placeholder" data-preview-placeholder>{{ old('name', $product->name ?: 'Product') }}</div>
         @endif

@@ -15,6 +15,17 @@
     <link rel="stylesheet" href="/css/responsive.css" />
   </head>
   <body class="admin">
+    @php
+      $user = auth()->user() ?? app(\App\Services\DemoProductService::class)->demoUser();
+      $userInitials = $user
+        ? collect(explode(' ', trim($user->name)))
+            ->filter()
+            ->take(2)
+            ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
+            ->implode('')
+        : '';
+    @endphp
+
     <header class="admin-topbar">
       <div class="container admin-topbar__inner">
         <a class="brand" href="{{ route('admin.index') }}">
@@ -22,7 +33,7 @@
           <span class="brand__name">GiftNest</span>
           <span class="brand__sub">Admin</span>
         </a>
-        <nav class="admin-nav">
+        <nav class="admin-nav" aria-label="Admin navigation">
           <a href="{{ route('admin.index') }}">Dashboard</a>
           <a href="{{ route('admin.products') }}">Products</a>
           <a href="{{ route('admin.categories') }}">Categories</a>
@@ -31,10 +42,60 @@
         </nav>
         <div class="admin-topbar__actions">
           <a class="btn btn--ghost" href="{{ route('home') }}">View site</a>
-          <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button class="btn" type="submit">Logout</button>
-          </form>
+          <div class="profilemenu" data-profile-menu>
+            <button
+              class="profilemenu__trigger"
+              type="button"
+              aria-label="Open admin profile menu"
+              aria-expanded="false"
+              data-profile-menu-toggle
+            >
+              <span class="profilemenu__avatar">{{ $userInitials }}</span>
+              <span class="profilemenu__meta">
+                <span class="profilemenu__name">{{ $user->name }}</span>
+                <span class="profilemenu__role">Administrator</span>
+              </span>
+            </button>
+
+            <div class="profilemenu__dropdown" data-profile-menu-panel hidden>
+              <a class="profilemenu__link" href="{{ route('profile.edit') }}">My profile</a>
+              <a class="profilemenu__link" href="{{ route('home') }}">View storefront</a>
+              <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button class="profilemenu__logout" type="submit">Logout</button>
+              </form>
+            </div>
+          </div>
+          <button
+            class="hamburger admin-hamburger"
+            type="button"
+            aria-label="Open admin menu"
+            aria-expanded="false"
+            aria-controls="admin-mobile-menu"
+            data-mobile-menu-toggle
+            data-menu-target="admin-mobile-menu"
+          >
+            <img class="hamburger__icon" src="/line-3-svgrepo-com.svg" alt="" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+
+      <div class="admin-mobilemenu" id="admin-mobile-menu" data-mobile-menu hidden>
+        <div class="container mobilemenu__inner">
+          <div class="mobilemenu__eyebrow">Manage the store from any screen</div>
+          <a href="{{ route('admin.index') }}">Dashboard</a>
+          <a href="{{ route('admin.products') }}">Products</a>
+          <a href="{{ route('admin.categories') }}">Categories</a>
+          <a href="{{ route('admin.orders') }}">Orders</a>
+          <a href="{{ route('admin.users') }}">Users</a>
+          <div class="mobilemenu__row">
+            <a class="btn btn--ghost" href="{{ route('profile.edit') }}">Profile</a>
+            <a class="btn btn--ghost" href="{{ route('home') }}">View site</a>
+            <form method="POST" action="{{ route('logout') }}">
+              @csrf
+              <button class="btn" type="submit">Logout</button>
+            </form>
+          </div>
         </div>
       </div>
     </header>

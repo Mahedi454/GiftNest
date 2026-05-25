@@ -53,7 +53,7 @@
             <div class="admin-listing">
               <div class="admin-listing__thumb">
                 @if ($product->image)
-                  <img src="/images/products/{{ $product->image }}" alt="{{ $product->name }}" />
+                  <img src="{{ asset('images/products/' . $product->image) }}" alt="{{ $product->name }}" />
                 @else
                   <div class="admin-listing__placeholder">{{ strtoupper(substr($product->name, 0, 1)) }}</div>
                 @endif
@@ -64,7 +64,7 @@
               </div>
             </div>
           </div>
-          <div>{{ $product->category->name }}</div>
+          <div>{{ $product->category?->name ?? 'No category' }}</div>
           <div>{{ $product->stock }}</div>
           <div>Tk {{ number_format((float) $product->price, 2) }}</div>
           <div>

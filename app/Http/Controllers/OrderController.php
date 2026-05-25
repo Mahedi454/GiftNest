@@ -3,13 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\DemoProductService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Throwable;
 
 class OrderController extends Controller
 {
+    public function __construct(private readonly DemoProductService $demoProducts) {}
+
     public function checkout(Request $request): View
     {
         $cartItems = collect($request->session()->get('cart', []))->values();
@@ -43,26 +47,36 @@ class OrderController extends Controller
         $shipping = 60;
         $total = $subtotal + $shipping;
 
-        $order = DB::transaction(function () use ($request, $data, $cartItems, $total) {
-            $order = Order::create([
-                'user_id' => $request->user()->id,
-                'customer_name' => $data['name'],
-                'phone' => $data['phone'],
-                'address' => $data['address'],
-                'total_price' => $total,
-                'status' => 'pending',
-            ]);
-
-            foreach ($cartItems as $item) {
-                $order->items()->create([
-                    'product_id' => $item['id'],
-                    'quantity' => $item['quantity'],
-                    'price' => $item['price'],
-                ]);
+        try {
+            if (! $request->user()) {
+                throw new \RuntimeException('No authenticated user is available for order storage.');
             }
 
-            return $order;
-        });
+            $order = DB::transaction(function () use ($request, $data, $cartItems, $total) {
+                $order = Order::create([
+                    'user_id' => $request->user()->id,
+                    'customer_name' => $data['name'],
+                    'phone' => $data['phone'],
+                    'address' => $data['address'],
+                    'total_price' => $total,
+                    'status' => 'pending',
+                ]);
+
+                foreach ($cartItems as $item) {
+                    $order->items()->create([
+                        'product_id' => $item['id'],
+                        'quantity' => $item['quantity'],
+                        'price' => $item['price'],
+                    ]);
+                }
+
+                return $order;
+            });
+        } catch (Throwable) {
+            return redirect()
+                ->route('checkout')
+                ->with('status', 'Demo mode: checkout preview is available, but order saving is disabled on Vercel.');
+        }
 
         $request->session()->forget('cart');
 
@@ -82,11 +96,21 @@ class OrderController extends Controller
 
     public function index(Request $request): View
     {
+        try {
+            if ($request->user()) {
+                return view('pages.orders', [
+                    'orders' => $request->user()
+                        ->orders()
+                        ->latest()
+                        ->get(),
+                ]);
+            }
+        } catch (Throwable) {
+            //
+        }
+
         return view('pages.orders', [
-            'orders' => $request->user()
-                ->orders()
-                ->latest()
-                ->get(),
+            'orders' => $this->demoProducts->orders(),
         ]);
     }
 }

@@ -9,7 +9,12 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Services\DemoProductService;
 use Illuminate\Support\Facades\Route;
+
+$demoMode = app(DemoProductService::class)->isVercelDemo();
+$accountMiddleware = $demoMode ? [] : ['auth'];
+$adminMiddleware = $demoMode ? [] : ['auth', 'admin'];
 
 Route::get('/', [ProductController::class, 'home'])->name('home');
 Route::get('/shop', [ProductController::class, 'index'])->name('shop');
@@ -20,7 +25,7 @@ Route::post('/cart/{product}', [CartController::class, 'store'])->name('cart.sto
 Route::patch('/cart/{product}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/{product}', [CartController::class, 'destroy'])->name('cart.destroy');
 
-Route::middleware('auth')->group(function () {
+Route::middleware($accountMiddleware)->group(function () {
     Route::view('/dashboard', 'pages.dashboard')->name('dashboard');
     Route::get('/checkout', [OrderController::class, 'checkout'])->name('checkout');
     Route::post('/checkout', [OrderController::class, 'store'])->name('checkout.store');
@@ -34,7 +39,7 @@ Route::middleware('auth')->group(function () {
 
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'admin'])
+    ->middleware($adminMiddleware)
     ->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('index');
 
