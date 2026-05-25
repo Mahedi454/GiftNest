@@ -15,7 +15,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        if ((bool) env('VERCEL')) {
+            config([
+                'cache.default' => env('CACHE_STORE', 'array'),
+                'database.default' => env('DB_CONNECTION', 'sqlite'),
+                'database.connections.sqlite.database' => env('DB_DATABASE', '/tmp/database.sqlite'),
+                'logging.default' => env('LOG_CHANNEL', 'stderr'),
+                'session.driver' => env('SESSION_DRIVER', 'cookie'),
+                'view.compiled' => env('VIEW_COMPILED_PATH', '/tmp/views'),
+            ]);
+        }
     }
 
     /**
