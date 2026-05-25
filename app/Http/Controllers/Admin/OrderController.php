@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateOrderStatusRequest;
 use App\Models\Order;
 use App\Services\DemoProductService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Throwable;
 
@@ -46,7 +46,7 @@ class OrderController extends Controller
         }
     }
 
-    public function updateStatus(Request $request, string $order): RedirectResponse
+    public function updateStatus(UpdateOrderStatusRequest $request, string $order): RedirectResponse
     {
         if ($this->demoProducts->isVercelDemo()) {
             return back()->with('status', 'Demo mode: database write actions are disabled on Vercel.');
@@ -54,11 +54,7 @@ class OrderController extends Controller
 
         $order = Order::query()->findOrFail($order);
 
-        $data = $request->validate([
-            'status' => ['required', 'in:pending,completed'],
-        ]);
-
-        $order->update($data);
+        $order->update($request->validated());
 
         return back()->with('status', 'Order status updated successfully.');
     }

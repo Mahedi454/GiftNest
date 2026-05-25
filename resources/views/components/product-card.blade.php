@@ -3,9 +3,10 @@
 ])
 
 @php
-  $imagePath = $product->image ? public_path('images/products/' . $product->image) : null;
+  $imageUrl = $product->image_url ?? null;
+  $imagePath = ! $imageUrl && $product->image ? public_path('images/products/' . $product->image) : null;
   $hasImage = $imagePath && file_exists($imagePath);
-  $imageUrl = $hasImage ? asset('images/products/' . $product->image) : '';
+  $imageUrl = $imageUrl ?: ($hasImage ? asset('images/products/' . $product->image) : '');
 @endphp
 
 <article class="card product-card">

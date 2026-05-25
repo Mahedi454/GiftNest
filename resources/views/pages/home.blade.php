@@ -65,10 +65,11 @@
           <div class="hero-showcase__products">
             @foreach ($heroItems as $product)
               @php
-                $productImagePath = $product->image ? public_path('images/products/' . $product->image) : null;
-                $productImageUrl = $productImagePath && file_exists($productImagePath)
+                $productImageUrl = $product->image_url ?? null;
+                $productImagePath = ! $productImageUrl && $product->image ? public_path('images/products/' . $product->image) : null;
+                $productImageUrl = $productImageUrl ?: ($productImagePath && file_exists($productImagePath)
                   ? asset('images/products/' . $product->image)
-                  : '';
+                  : '');
               @endphp
 
               <article class="hero-mini card">

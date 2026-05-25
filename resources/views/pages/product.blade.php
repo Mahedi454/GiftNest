@@ -8,10 +8,11 @@
       <div class="card product__media">
         <div class="product__mediaFrame">
           @php
-            $imagePath = $product->image ? public_path('images/products/' . $product->image) : null;
-            $imageUrl = $imagePath && file_exists($imagePath)
+            $imageUrl = $product->image_url ?? null;
+            $imagePath = ! $imageUrl && $product->image ? public_path('images/products/' . $product->image) : null;
+            $imageUrl = $imageUrl ?: ($imagePath && file_exists($imagePath)
               ? asset('images/products/' . $product->image)
-              : '';
+              : '');
           @endphp
 
           @if ($imageUrl)

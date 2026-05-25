@@ -2,7 +2,13 @@
 
 namespace App\Providers;
 
+use App\Interfaces\CategoryRepositoryInterface;
+use App\Interfaces\OrderRepositoryInterface;
+use App\Interfaces\ProductRepositoryInterface;
 use App\Models\User;
+use App\Repositories\EloquentCategoryRepository;
+use App\Repositories\EloquentOrderRepository;
+use App\Repositories\EloquentProductRepository;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
@@ -15,6 +21,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(ProductRepositoryInterface::class, EloquentProductRepository::class);
+        $this->app->bind(CategoryRepositoryInterface::class, EloquentCategoryRepository::class);
+        $this->app->bind(OrderRepositoryInterface::class, EloquentOrderRepository::class);
+
         if ((bool) env('VERCEL')) {
             config([
                 'cache.default' => env('CACHE_STORE', 'array'),

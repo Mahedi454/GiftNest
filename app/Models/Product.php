@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\File;
 
 class Product extends Model
 {
@@ -17,6 +16,8 @@ class Product extends Model
         'price',
         'badge',
         'image',
+        'image_url',
+        'image_public_id',
         'description',
         'category_id',
         'stock',
@@ -32,13 +33,6 @@ class Product extends Model
         ];
     }
 
-    protected static function booted(): void
-    {
-        static::deleting(function (Product $product): void {
-            $product->deleteImageFile();
-        });
-    }
-
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
@@ -47,18 +41,5 @@ class Product extends Model
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
-    }
-
-    public function deleteImageFile(): void
-    {
-        if (! $this->image) {
-            return;
-        }
-
-        $imagePath = public_path('images/products/'.$this->image);
-
-        if (File::exists($imagePath)) {
-            File::delete($imagePath);
-        }
     }
 }

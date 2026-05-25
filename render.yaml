@@ -13,6 +13,8 @@ services:
         sync: false
       - key: APP_KEY
         sync: false
+      - key: APP_NAME
+        value: GiftNest
       - key: DB_CONNECTION
         value: pgsql
       - key: DATABASE_URL
@@ -29,6 +31,14 @@ services:
         value: "120"
       - key: RUN_MIGRATIONS
         value: "true"
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_PRODUCT_FOLDER
+        value: giftnest/products
 
 databases:
   - name: giftnest-db

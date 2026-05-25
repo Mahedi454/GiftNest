@@ -26,10 +26,11 @@
           <div class="cartrow">
             <div class="cartrow__media">
               @php
-                $imagePath = $item['image'] ? public_path('images/products/' . $item['image']) : null;
-                $imageUrl = $imagePath && file_exists($imagePath)
+                $imageUrl = $item['image_url'] ?? null;
+                $imagePath = ! $imageUrl && $item['image'] ? public_path('images/products/' . $item['image']) : null;
+                $imageUrl = $imageUrl ?: ($imagePath && file_exists($imagePath)
                   ? asset('images/products/' . $item['image'])
-                  : '';
+                  : '');
               @endphp
 
               @if ($imageUrl)

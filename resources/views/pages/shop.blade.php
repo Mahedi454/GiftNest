@@ -14,6 +14,25 @@
   </section>
 
   <section class="section">
+    <form class="card" method="GET" action="{{ route('shop') }}">
+      <div class="grid grid--2">
+        <label class="field">
+          <span class="field__label">Search</span>
+          <input class="input" type="search" name="search" value="{{ request('search') }}" placeholder="Search gifts" />
+        </label>
+
+        <label class="field">
+          <span class="field__label">Category</span>
+          <input class="input" type="text" name="category" value="{{ request('category') }}" placeholder="Birthday Gifts" />
+        </label>
+      </div>
+
+      <div class="admin-product-form__actions">
+        <button class="btn" type="submit">Filter</button>
+        <a class="btn btn--ghost" href="{{ route('shop') }}">Reset</a>
+      </div>
+    </form>
+
     <div class="grid grid--4">
       @forelse ($products as $product)
         <x-product-card :product="$product" />

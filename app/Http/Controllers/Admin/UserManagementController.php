@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateUserRoleRequest;
 use App\Models\User;
 use App\Services\DemoProductService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Throwable;
 
@@ -41,7 +41,7 @@ class UserManagementController extends Controller
         }
     }
 
-    public function updateRole(Request $request, string $user): RedirectResponse
+    public function updateRole(UpdateUserRoleRequest $request, string $user): RedirectResponse
     {
         if ($this->demoProducts->isVercelDemo()) {
             return back()->with('status', 'Demo mode: database write actions are disabled on Vercel.');
@@ -49,9 +49,7 @@ class UserManagementController extends Controller
 
         $user = User::query()->findOrFail($user);
 
-        $data = $request->validate([
-            'role' => ['required', 'in:admin,user'],
-        ]);
+        $data = $request->validated();
 
         if ($request->user()?->is($user) && $data['role'] !== 'admin') {
             return back()->with('status', 'You cannot remove admin access from your own account.');

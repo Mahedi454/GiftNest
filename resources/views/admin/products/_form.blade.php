@@ -1,5 +1,6 @@
 @php
   $currentImage = old('image', $product->image);
+  $currentImageUrl = old('image_url', $product->image_url ?? null);
 @endphp
 
 <form class="card admin-product-form admin-product-editor" method="POST" action="{{ $formAction }}" enctype="multipart/form-data" data-product-preview-form>
@@ -84,8 +85,8 @@
     <aside class="card admin-preview">
       <div class="admin-preview__label">Live preview</div>
       <div class="admin-preview__media" data-preview-media>
-        @if ($currentImage)
-          <img src="{{ asset('images/products/' . $currentImage) }}" alt="{{ old('name', $product->name ?: 'Product preview') }}" />
+        @if ($currentImageUrl || $currentImage)
+          <img src="{{ $currentImageUrl ?: asset('images/products/' . $currentImage) }}" alt="{{ old('name', $product->name ?: 'Product preview') }}" />
         @else
           <div class="admin-preview__placeholder" data-preview-placeholder>{{ old('name', $product->name ?: 'Product') }}</div>
         @endif

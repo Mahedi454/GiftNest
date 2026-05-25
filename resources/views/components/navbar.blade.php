@@ -2,7 +2,6 @@
   @php
     $cartCount = collect(session('cart', []))->sum('quantity');
     $user = auth()->user();
-    $isDemoMode = app(\App\Services\DemoProductService::class)->isVercelDemo();
     $userInitials = $user
       ? collect(explode(' ', trim($user->name)))
           ->filter()
@@ -67,10 +66,6 @@
           </div>
         </div>
       @else
-        @if ($isDemoMode)
-          <a class="btn btn--ghost" href="{{ route('admin.index') }}">Admin</a>
-          <a class="btn btn--ghost" href="{{ route('profile.edit') }}">Profile</a>
-        @endif
         <a class="btn btn--ghost" href="{{ route('login') }}">Login</a>
         <a class="btn" href="{{ route('register') }}">Sign up</a>
       @endauth
@@ -109,10 +104,6 @@
             <button class="btn btn--ghost" type="submit">Logout</button>
           </form>
         @else
-          @if ($isDemoMode)
-            <a class="btn btn--ghost" href="{{ route('admin.index') }}">Admin</a>
-            <a class="btn btn--ghost" href="{{ route('profile.edit') }}">Profile</a>
-          @endif
           <a class="btn btn--ghost" href="{{ route('login') }}">Login</a>
           <a class="btn" href="{{ route('register') }}">Sign up</a>
         @endauth

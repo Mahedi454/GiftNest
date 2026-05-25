@@ -3,23 +3,24 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreProductRequest;
+use App\Http\Requests\Admin\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\DemoProductService;
+use App\Services\Images\ImageStorageService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
 class ProductManagementController extends Controller
 {
-    public function __construct(private readonly DemoProductService $demoProducts)
-    {
-    }
+    public function __construct(
+        private readonly DemoProductService $demoProducts,
+        private readonly ImageStorageService $images,
+    ) {}
 
     public function index(): View
     {
@@ -71,7 +72,7 @@ class ProductManagementController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreProductRequest $request): RedirectResponse
     {
         if ($this->demoProducts->isVercelDemo()) {
             return back()
@@ -79,7 +80,7 @@ class ProductManagementController extends Controller
                 ->with('status', 'Demo mode: database write actions are disabled on Vercel.');
         }
 
-        $data = $this->validatedData($request);
+        $data = $this->validatedData($request->validated(), $request);
 
         try {
             DB::transaction(function () use ($data): void {
@@ -122,7 +123,7 @@ class ProductManagementController extends Controller
         ]);
     }
 
-    public function update(Request $request, string $product): RedirectResponse
+    public function update(UpdateProductRequest $request, string $product): RedirectResponse
     {
         if ($this->demoProducts->isVercelDemo()) {
             return back()
@@ -131,7 +132,7 @@ class ProductManagementController extends Controller
         }
 
         $product = Product::query()->findOrFail($product);
-        $data = $this->validatedData($request, $product);
+        $data = $this->validatedData($request->validated(), $request, $product);
 
         try {
             DB::transaction(function () use ($data, $product): void {
@@ -162,6 +163,7 @@ class ProductManagementController extends Controller
         }
 
         $product = Product::query()->findOrFail($product);
+        $this->images->deleteProductImage($product->image, $product->image_public_id);
         $product->delete();
 
         return redirect()
@@ -169,60 +171,33 @@ class ProductManagementController extends Controller
             ->with('status', 'Product deleted successfully.');
     }
 
-    private function validatedData(Request $request, ?Product $product = null): array
+    private function validatedData(array $data, StoreProductRequest|UpdateProductRequest $request, ?Product $product = null): array
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'category_id' => ['required', 'exists:categories,id'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'image' => ['nullable', 'string', 'max:255'],
-            'image_upload' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif,avif', 'max:4096'],
-            'remove_image' => ['nullable', 'boolean'],
-            'description' => ['required', 'string'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
         $data['is_active'] = $request->boolean('is_active');
         $removeImage = $request->boolean('remove_image');
         $existingImage = $product?->image;
+        $existingPublicId = $product?->image_public_id;
 
         if ($request->hasFile('image_upload')) {
-            $image = $request->file('image_upload');
-            $filename = Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME));
-            $filename = $filename.'-'.time().'.'.$image->getClientOriginalExtension();
-            $destination = public_path('images/products');
+            $storedImage = $this->images->storeProductImage($request->file('image_upload'));
+            $data = [...$data, ...$storedImage];
 
-            if (! File::isDirectory($destination)) {
-                File::ensureDirectoryExists($destination);
+            if ($existingImage || $existingPublicId) {
+                $this->images->deleteProductImage($existingImage, $existingPublicId);
             }
-
-            $image->move($destination, $filename);
-            $data['image'] = $filename;
-
-            if ($existingImage && $existingImage !== $filename) {
-                $this->deleteImageFile($existingImage);
-            }
-        } elseif ($removeImage || blank($data['image'])) {
-            if ($existingImage) {
-                $this->deleteImageFile($existingImage);
+        } elseif ($removeImage || blank($data['image'] ?? null)) {
+            if ($existingImage || $existingPublicId) {
+                $this->images->deleteProductImage($existingImage, $existingPublicId);
             }
 
             $data['image'] = null;
+            $data['image_url'] = null;
+            $data['image_public_id'] = null;
         }
 
         unset($data['image_upload'], $data['remove_image']);
 
         return $data;
-    }
-
-    private function deleteImageFile(string $filename): void
-    {
-        $imagePath = public_path('images/products/'.$filename);
-
-        if (File::exists($imagePath)) {
-            File::delete($imagePath);
-        }
     }
 
     private function findProductForAdmin(string $product): object

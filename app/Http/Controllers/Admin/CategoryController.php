@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreCategoryRequest;
+use App\Http\Requests\Admin\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Services\DemoProductService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Throwable;
 
@@ -44,20 +45,18 @@ class CategoryController extends Controller
         }
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreCategoryRequest $request): RedirectResponse
     {
         if ($this->demoProducts->isVercelDemo()) {
             return back()->with('status', 'Demo mode: database write actions are disabled on Vercel.');
         }
 
-        Category::create($request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:categories,name'],
-        ]));
+        Category::create($request->validated());
 
         return back()->with('status', 'Category created successfully.');
     }
 
-    public function update(Request $request, string $category): RedirectResponse
+    public function update(UpdateCategoryRequest $request, string $category): RedirectResponse
     {
         if ($this->demoProducts->isVercelDemo()) {
             return back()->with('status', 'Demo mode: database write actions are disabled on Vercel.');
@@ -65,9 +64,7 @@ class CategoryController extends Controller
 
         $category = Category::query()->findOrFail($category);
 
-        $category->update($request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:categories,name,'.$category->id],
-        ]));
+        $category->update($request->validated());
 
         return back()->with('status', 'Category updated successfully.');
     }
