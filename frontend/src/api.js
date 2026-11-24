@@ -12,6 +12,8 @@ export class ApiError extends Error {
   }
 }
 
+let warnedAboutApi = false;
+
 async function request(method, path, body) {
   const headers = {};
   const token = getToken();
@@ -28,6 +30,20 @@ async function request(method, path, body) {
       body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
     });
   } catch {
+    throw new ApiError('We could not connect right now. Please check your connection and try again.', 0);
+  }
+
+  const isJson = (response.headers.get('content-type') || '').includes('application/json');
+  if (response.ok && !isJson) {
+    // A successful reply that is not JSON is usually the website's own page coming back from a wrong
+    // address: on a deployed site this means VITE_API_URL was not set when the frontend was built.
+    if (!warnedAboutApi) {
+      warnedAboutApi = true;
+      console.error(
+        `[GiftNest] ${BASE || window.location.origin}/api${path} did not return data. ` +
+          'If this is a deployed site, set VITE_API_URL to your backend address and redeploy the frontend.',
+      );
+    }
     throw new ApiError('We could not connect right now. Please check your connection and try again.', 0);
   }
 
