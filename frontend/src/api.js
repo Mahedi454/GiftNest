@@ -48,8 +48,17 @@ export const api = {
   delete: (path, body) => request('DELETE', path, body),
 };
 
-// Product images are served by the API, so relative paths like /images/... need the API origin.
-export const assetUrl = (path) => (path && path.startsWith('/') ? `${BASE}${path}` : path || '');
+// Where an image path should be loaded from:
+//  - /product-images/...  sample photos that ship with the frontend, so they load from the frontend itself
+//  - /images/products/... the same photos under the older path that earlier seeds saved in the database
+//  - /uploads/...         photos uploaded while developing locally, served by the API
+//  - https://...          photos uploaded in production (Cloudinary), already complete URLs
+export const assetUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('/uploads/')) return `${BASE}${path}`;
+  if (path.startsWith('/images/products/')) return path.replace('/images/products/', '/product-images/');
+  return path;
+};
 
 export const money = (value, digits = 2) =>
   `Tk ${Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;

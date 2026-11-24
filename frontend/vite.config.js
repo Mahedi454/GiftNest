@@ -8,6 +8,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    proxy: { '/api': api, '/images': api, '/uploads': api },
+    proxy: { '/api': api, '/uploads': api },
   },
 });

@@ -1,15 +1,10 @@
 import 'dotenv/config';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 import Category from './models/Category.js';
 import Product from './models/Product.js';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const imageDir = path.resolve(here, '../public/images/products');
-
+// Product photos are served by the frontend (frontend/public/product-images), so products only store the path.
 const categories = [
   'Birthday Gifts', 'Flowers', 'Jewelry', 'Chocolates', 'Gift Boxes',
   'Gift Hampers', 'Chocolate Bouquets', 'Perfumes', 'Personalized Gifts', 'Stationery',
@@ -50,12 +45,11 @@ async function seed() {
     categoryDocs[name] = await Category.findOneAndUpdate({ name }, { name }, { upsert: true, new: true });
   }
 
-  const available = new Set(fs.readdirSync(imageDir));
   for (const [name, category, price, file, description, stock] of products) {
-    if (!available.has(file)) continue;
+    // Matched by name, so re-running the seed (even on data seeded with the older image path) never duplicates products.
     await Product.findOneAndUpdate(
-      { image: `/images/products/${file}` },
-      { name, description, price, stock, isActive: true, category: categoryDocs[category]._id, image: `/images/products/${file}` },
+      { name },
+      { name, description, price, stock, isActive: true, category: categoryDocs[category]._id, image: `/product-images/${file}` },
       { upsert: true },
     );
   }

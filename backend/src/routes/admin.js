@@ -5,7 +5,8 @@ import Product from '../models/Product.js';
 import Review from '../models/Review.js';
 import User from '../models/User.js';
 import { requireAdmin, requireAuth } from '../middleware/auth.js';
-import { removeUploadedImage, uploadProductImage } from '../middleware/upload.js';
+import { uploadProductImage } from '../middleware/upload.js';
+import { removeImage, saveImage } from '../utils/imageStorage.js';
 import { HttpError, asyncHandler, pageResult, paginate, validate } from '../utils/http.js';
 import { shapeReview } from '../utils/reviews.js';
 
@@ -119,13 +120,15 @@ router.post(
   '/products',
   uploadProductImage,
   asyncHandler(async (req, res) => {
+    // Validate first so a bad form never leaves an orphaned upload behind.
+    const data = await readProductBody(req.body);
+    if (req.file) data.image = await saveImage(req.file);
+
     try {
-      const data = await readProductBody(req.body);
-      if (req.file) data.image = `/uploads/${req.file.filename}`;
       const product = await Product.create(data);
       res.status(201).json({ product: await product.populate('category') });
     } catch (error) {
-      if (req.file) removeUploadedImage(`/uploads/${req.file.filename}`);
+      if (req.file) await removeImage(data.image);
       throw error;
     }
   }),
@@ -135,28 +138,29 @@ router.put(
   '/products/:id',
   uploadProductImage,
   asyncHandler(async (req, res) => {
+    const product = await Product.findById(req.params.id);
+    if (!product) throw new HttpError(404, 'That product could not be found.');
+
+    const data = await readProductBody(req.body);
+    const previousImage = product.image;
+    const uploaded = Boolean(req.file);
+
+    if (uploaded) {
+      data.image = await saveImage(req.file);
+    } else if (toBool(req.body.removeImage)) {
+      data.image = '';
+    }
+
     try {
-      const product = await Product.findById(req.params.id);
-      if (!product) throw new HttpError(404, 'That product could not be found.');
-
-      const data = await readProductBody(req.body);
-      const previousImage = product.image;
-
-      if (req.file) {
-        data.image = `/uploads/${req.file.filename}`;
-      } else if (toBool(req.body.removeImage)) {
-        data.image = '';
-      }
-
       Object.assign(product, data);
       await product.save();
-      if (data.image !== undefined && data.image !== previousImage) removeUploadedImage(previousImage);
-
-      res.json({ product: await product.populate('category') });
     } catch (error) {
-      if (req.file) removeUploadedImage(`/uploads/${req.file.filename}`);
+      if (uploaded) await removeImage(data.image);
       throw error;
     }
+
+    if (data.image !== undefined && data.image !== previousImage) await removeImage(previousImage);
+    res.json({ product: await product.populate('category') });
   }),
 );
 
@@ -167,7 +171,7 @@ router.delete(
     if (!product) throw new HttpError(404, 'That product could not be found.');
     await product.deleteOne();
     await Review.deleteMany({ product: product._id });
-    removeUploadedImage(product.image);
+    await removeImage(product.image);
     res.json({ message: 'Product deleted successfully.' });
   }),
 );

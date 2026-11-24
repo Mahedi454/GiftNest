@@ -15,10 +15,13 @@ export function errorHandler(err, _req, res, _next) {
     const message = `That ${field} is already in use.`;
     return res.status(422).json({ message, errors: { [field]: message } });
   }
+  // Errors we raise on purpose (HttpError) carry a status and a message that is safe to show.
+  // Anything else is unexpected, so its details stay in the server log only.
+  const expected = Boolean(err.status);
   const status = err.status || 500;
-  if (status >= 500) console.error(err);
+  if (!expected) console.error(err);
   res.status(status).json({
-    message: status >= 500 ? 'Something went wrong on the server.' : err.message,
+    message: expected ? err.message : 'Something went wrong on the server.',
     errors: err.errors,
   });
 }
