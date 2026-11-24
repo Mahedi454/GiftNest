@@ -1,0 +1,450 @@
+/* Navbar and footer. Loaded last so these rules win over the older stylesheets. */
+
+/* Transform only (no fade), so the menu is always fully opaque and readable. */
+@keyframes popIn {
+  from { transform: translateY(-8px) scale(.97); }
+  to { transform: none; }
+}
+@keyframes badgeBump {
+  0% { transform: scale(.4); }
+  60% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* =========================================================
+   Navbar
+   ========================================================= */
+.nav {
+  position: sticky;
+  top: 14px;
+  z-index: 40;
+  width: min(1180px, calc(100% - 32px));
+  margin: 14px auto 0;
+}
+.nav__bar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 68px;
+  padding: 0 12px 0 20px;
+  border-radius: 999px;
+  transition: height .3s ease;
+}
+/* The glass effect lives on its own layer so dropdowns inside the bar stay crisp. */
+.nav__bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, .78);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, .9);
+  box-shadow: 0 10px 30px rgba(58, 139, 149, .1);
+  transition: box-shadow .3s ease, background .3s ease;
+}
+.nav--scrolled .nav__bar {
+  height: 62px;
+}
+.nav--scrolled .nav__bar::before {
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 16px 40px rgba(58, 139, 149, .18);
+}
+
+.nav .brand__logo {
+  width: 38px;
+  height: 38px;
+  filter: none;
+  transition: transform .3s ease;
+}
+.nav .brand:hover .brand__logo {
+  transform: rotate(-8deg) scale(1.08);
+}
+.nav .brand__name {
+  font-size: 1.2rem;
+  letter-spacing: -.03em;
+}
+
+.nav__links {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.nav__links a {
+  position: relative;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  transition: color .2s ease, background .2s ease;
+}
+.nav__links a:hover {
+  background: rgba(255, 62, 155, .08);
+  color: var(--accent);
+}
+.nav__links a.active {
+  color: var(--accent);
+  background: rgba(255, 62, 155, .12);
+}
+
+.nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nav__cart {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--stroke-strong);
+  transition: transform .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.nav__cart svg {
+  width: 21px;
+  height: 21px;
+}
+.nav__cart:hover {
+  color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(58, 139, 149, .16);
+}
+.nav__badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #ff7ab8);
+  box-shadow: 0 4px 10px rgba(255, 62, 155, .4);
+  animation: badgeBump .4s ease;
+}
+.nav__text {
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 15px;
+  transition: color .2s ease, background .2s ease;
+}
+.nav__text:hover {
+  color: var(--accent);
+  background: rgba(255, 62, 155, .08);
+}
+.nav__signup {
+  padding: 12px 22px;
+}
+.nav__desktop {
+  display: contents;
+}
+
+/* Hamburger drawn with three bars that turn into an X */
+.nav .hamburger {
+  display: none;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--stroke-strong);
+  cursor: pointer;
+}
+.hamburger__bars {
+  position: relative;
+  display: block;
+  width: 20px;
+  height: 14px;
+}
+.hamburger__bars i {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--text);
+  transition: transform .3s ease, opacity .2s ease, top .3s ease;
+}
+.hamburger__bars i:nth-child(1) { top: 0; }
+.hamburger__bars i:nth-child(2) { top: 6px; }
+.hamburger__bars i:nth-child(3) { top: 12px; }
+.hamburger.is-open .hamburger__bars i:nth-child(1) { top: 6px; transform: rotate(45deg); }
+.hamburger.is-open .hamburger__bars i:nth-child(2) { opacity: 0; }
+.hamburger.is-open .hamburger__bars i:nth-child(3) { top: 6px; transform: rotate(-45deg); }
+
+/* Mobile panel: always rendered so it can animate open and closed */
+.nav__panel {
+  position: absolute;
+  z-index: 1;
+  top: 76px;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+  transition: grid-template-rows .35s ease, opacity .25s ease;
+}
+.nav--open .nav__panel {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+}
+.nav__panelInner {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 24px 50px rgba(58, 139, 149, .2);
+  border: 1px solid rgba(255, 255, 255, .9);
+  padding: 0 14px;
+  transition: padding .35s ease;
+}
+.nav--open .nav__panelInner {
+  padding: 14px;
+}
+.nav__panelInner > a {
+  padding: 14px 16px;
+  border-radius: 16px;
+  font-weight: 700;
+  transition: background .2s ease, color .2s ease;
+}
+.nav__panelInner > a:hover,
+.nav__panelInner > a.active {
+  color: var(--accent);
+  background: rgba(255, 62, 155, .09);
+}
+.nav__panelRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--stroke);
+}
+.nav__panelRow .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Profile menu (also used by the admin top bar) */
+.profilemenu__trigger {
+  gap: 10px;
+  padding: 5px 12px 5px 5px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--stroke-strong);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.profilemenu__trigger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(58, 139, 149, .14);
+}
+.profilemenu__avatar {
+  background: linear-gradient(135deg, var(--accent), #ff7ab8);
+  color: #fff;
+}
+.profilemenu__chev {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  transition: transform .25s ease;
+}
+.profilemenu__trigger[aria-expanded='true'] .profilemenu__chev {
+  transform: rotate(180deg);
+}
+.profilemenu__dropdown {
+  min-width: 240px;
+  padding: 8px;
+  border-radius: 22px;
+  background: #fff;
+  border: 1px solid var(--stroke);
+  box-shadow: 0 24px 54px rgba(58, 139, 149, .24);
+  animation: popIn .22s ease both;
+  transform-origin: top right;
+}
+.profilemenu__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px 12px;
+  margin-bottom: 6px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 62, 155, .08), rgba(102, 208, 188, .14));
+}
+.profilemenu__head strong {
+  font-family: var(--font-display);
+}
+.profilemenu__head small {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.profilemenu__link,
+.profilemenu__logout {
+  border-radius: 14px;
+}
+.profilemenu__logout {
+  color: var(--danger);
+}
+
+/* =========================================================
+   Footer
+   ========================================================= */
+.foot {
+  position: relative;
+  margin-top: 40px;
+  color: #b9c8cf;
+  background: linear-gradient(180deg, #1a2a31 0%, #111c21 100%);
+}
+.foot::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), #ff7ab8 40%, var(--accent2));
+}
+.foot__inner {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr;
+  gap: 48px;
+  padding: 64px 0 44px;
+}
+.foot__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -.03em;
+  color: #fff;
+}
+.foot__logo img {
+  width: 40px;
+  height: 40px;
+}
+.foot__brand p {
+  max-width: 34ch;
+  margin: 16px 0 22px;
+  line-height: 1.7;
+  color: #9db0b9;
+}
+.foot__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #ff7ab8);
+  box-shadow: 0 12px 26px rgba(255, 62, 155, .3);
+  transition: transform .2s ease, gap .2s ease;
+}
+.foot__cta:hover {
+  transform: translateY(-2px);
+  gap: 12px;
+}
+.foot__col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.foot__col h4 {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: .8rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.foot__col a,
+.foot__col button {
+  padding: 5px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  color: #9db0b9;
+  cursor: pointer;
+  transition: color .2s ease, transform .2s ease;
+}
+.foot__col a:hover,
+.foot__col button:hover {
+  color: #fff;
+  transform: translateX(4px);
+}
+.foot__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  padding: 22px 0 28px;
+  font-size: 13.5px;
+  color: #7d909a;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+}
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+@media (max-width: 900px) {
+  .nav__links,
+  .nav__text--desktop,
+  .nav__desktop {
+    display: none;
+  }
+  .nav .hamburger {
+    display: grid !important;
+  }
+  .nav__bar {
+    padding-left: 16px;
+  }
+  .foot__inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+    padding-top: 52px;
+  }
+  .foot__brand {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 480px) {
+  .foot__bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profilemenu__dropdown,
+  .nav__badge {
+    animation: none;
+  }
+}
