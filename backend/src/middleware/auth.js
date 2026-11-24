@@ -26,6 +26,6 @@ export const requireAuth = asyncHandler(async (req, _res, next) => {
 });
 
 export const requireAdmin = (req, _res, next) => {
-  if (req.user?.role !== 'admin') return next(new HttpError(403, 'Admin access required.'));
+  if (req.user?.role !== 'admin') return next(new HttpError(403, 'You do not have permission to do that.'));
   next();
 };

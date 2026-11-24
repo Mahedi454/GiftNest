@@ -13,9 +13,9 @@ export default function CheckoutSuccess() {
   return (
     <section className="section">
       <div className="card empty">
-        <div className="kicker">Order Saved</div>
-        <h1>Order placed successfully</h1>
-        <div className="empty__subtitle">Your order #{order.orderNumber} has been saved in the database.</div>
+        <div className="kicker">Thank you</div>
+        <h1>Your order is confirmed</h1>
+        <div className="empty__subtitle">Order #{order.orderNumber} is confirmed. We will start preparing it right away.</div>
 
         <div className="product__highlights">
           <span className="chip">{order.customerName}</span>

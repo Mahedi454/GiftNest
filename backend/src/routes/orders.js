@@ -16,16 +16,16 @@ router.post(
   asyncHandler(async (req, res) => {
     const { name, phone, address, items } = req.body;
     validate({
-      name: !String(name || '').trim() ? 'The name field is required.' : '',
-      phone: !String(phone || '').trim() ? 'The phone field is required.' : String(phone).length > 30 ? 'The phone may not be longer than 30 characters.' : '',
-      address: !String(address || '').trim() ? 'The address field is required.' : '',
+      name: !String(name || '').trim() ? 'Please enter your full name.' : '',
+      phone: !String(phone || '').trim() ? 'Please enter a phone number.' : String(phone).length > 30 ? 'That phone number is too long.' : '',
+      address: !String(address || '').trim() ? 'Please enter a delivery address.' : '',
     });
 
     if (!Array.isArray(items) || items.length === 0) throw new HttpError(422, 'Your cart is empty.');
 
     const quantities = new Map();
     for (const item of items) {
-      if (!mongoose.isValidObjectId(item?.productId)) throw new HttpError(422, 'Your cart contains an invalid product.');
+      if (!mongoose.isValidObjectId(item?.productId)) throw new HttpError(422, 'One of the items in your cart is no longer valid. Please review your cart.');
       const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
       quantities.set(String(item.productId), (quantities.get(String(item.productId)) || 0) + qty);
     }
@@ -69,9 +69,9 @@ router.get(
   '/:id',
   asyncHandler(async (req, res) => {
     const order = await Order.findById(req.params.id);
-    if (!order) throw new HttpError(404, 'Order not found.');
+    if (!order) throw new HttpError(404, 'That order could not be found.');
     if (String(order.user) !== String(req.user._id) && req.user.role !== 'admin') {
-      throw new HttpError(403, 'You cannot view this order.');
+      throw new HttpError(403, 'You do not have access to this order.');
     }
     res.json({ order });
   }),

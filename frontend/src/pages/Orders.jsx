@@ -11,8 +11,8 @@ export default function Orders() {
   return (
     <section className="section">
       <div className="section__head">
-        <h1>Orders</h1>
-        <div className="muted">Track the orders you have placed through the simple GiftNest checkout flow.</div>
+        <h1>My orders</h1>
+        <div className="muted">Follow the status of every order you have placed.</div>
       </div>
 
       <div className="card table">
@@ -26,8 +26,8 @@ export default function Orders() {
         {data.orders.length === 0 ? (
           <div className="empty">
             <div className="empty__title">No orders yet</div>
-            <div className="empty__subtitle">Complete checkout from your cart to save your first order.</div>
-            <Link className="btn" to="/shop">Go to shop</Link>
+            <div className="empty__subtitle">When you place an order, it will show up here.</div>
+            <Link className="btn" to="/shop">Start shopping</Link>
           </div>
         ) : (
           data.orders.map((order) => (

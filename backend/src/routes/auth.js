@@ -16,7 +16,7 @@ router.post(
       firstName: !first ? 'First name is required.' : first.length > 120 ? 'First name is too long.' : '',
       lastName: !last ? 'Last name is required.' : last.length > 120 ? 'Last name is too long.' : '',
       email: !isEmail(email) ? 'Enter a valid email address.' : '',
-      password: String(password || '').length < 8 ? 'The password must be at least 8 characters.' : '',
+      password: String(password || '').length < 8 ? 'Use at least 8 characters for your password.' : '',
       passwordConfirmation: password !== passwordConfirmation ? 'The passwords do not match.' : '',
     });
 
@@ -36,7 +36,7 @@ router.post(
     const { email, password } = req.body;
     validate({
       email: !isEmail(email) ? 'Enter a valid email address.' : '',
-      password: !password ? 'The password field is required.' : '',
+      password: !password ? 'Please enter your password.' : '',
     });
 
     const user = await User.findOne({ email: String(email).toLowerCase().trim() }).select('+password');

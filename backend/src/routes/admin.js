@@ -16,13 +16,46 @@ const toBool = (value) => value === true || value === 'true' || value === '1' ||
 router.get(
   '/stats',
   asyncHandler(async (_req, res) => {
-    const [users, products, orders, revenue] = await Promise.all([
+    // Look back a little further than 7 days so the client can fill the last 7 local days.
+    const since = new Date(Date.now() - 9 * 24 * 60 * 60 * 1000);
+
+    const [users, customers, products, orders, revenue, statusRows, dailyRows, recentOrders, lowStock] = await Promise.all([
       User.countDocuments(),
+      User.countDocuments({ role: 'user' }),
       Product.countDocuments(),
       Order.countDocuments(),
       Order.aggregate([{ $match: { status: 'completed' } }, { $group: { _id: null, total: { $sum: '$totalPrice' } } }]),
+      Order.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+      Order.aggregate([
+        { $match: { createdAt: { $gte: since } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'Asia/Dhaka' } },
+            total: { $sum: '$totalPrice' },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      Order.find().populate('user', 'name email').sort('-createdAt').limit(6),
+      Product.find({ stock: { $lte: 5 } }).sort('stock').limit(6).select('name stock image isActive'),
     ]);
-    res.json({ stats: { users, products, orders, revenue: revenue[0]?.total || 0 } });
+
+    const byStatus = Object.fromEntries(statusRows.map((row) => [row._id, row.count]));
+    res.json({
+      stats: {
+        users,
+        customers,
+        products,
+        orders,
+        revenue: revenue[0]?.total || 0,
+        pending: byStatus.pending || 0,
+        completed: byStatus.completed || 0,
+      },
+      daily: dailyRows.map((row) => ({ date: row._id, total: row.total, count: row.count })),
+      recentOrders,
+      lowStock,
+    });
   }),
 );
 
@@ -46,7 +79,7 @@ router.get(
   '/products/:id',
   asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id).populate('category');
-    if (!product) throw new HttpError(404, 'Product not found.');
+    if (!product) throw new HttpError(404, 'That product could not be found.');
     res.json({ product });
   }),
 );
@@ -55,11 +88,11 @@ async function readProductBody(body) {
   const price = Number(body.price);
   const stock = Number(body.stock);
   validate({
-    name: !String(body.name || '').trim() ? 'The name field is required.' : '',
-    category: !body.category || !(await Category.exists({ _id: body.category }).catch(() => null)) ? 'Select a valid category.' : '',
-    price: body.price === '' || body.price == null || Number.isNaN(price) || price < 0 ? 'The price must be a number of 0 or more.' : '',
-    stock: body.stock === '' || body.stock == null || !Number.isInteger(stock) || stock < 0 ? 'The stock must be a whole number of 0 or more.' : '',
-    description: !String(body.description || '').trim() ? 'The description field is required.' : '',
+    name: !String(body.name || '').trim() ? 'Please enter a product name.' : '',
+    category: !body.category || !(await Category.exists({ _id: body.category }).catch(() => null)) ? 'Please choose a category.' : '',
+    price: body.price === '' || body.price == null || Number.isNaN(price) || price < 0 ? 'Enter a valid price (0 or more).' : '',
+    stock: body.stock === '' || body.stock == null || !Number.isInteger(stock) || stock < 0 ? 'Enter a valid stock quantity (a whole number, 0 or more).' : '',
+    description: !String(body.description || '').trim() ? 'Please add a product description.' : '',
   });
   return {
     name: body.name,
@@ -93,7 +126,7 @@ router.put(
   asyncHandler(async (req, res) => {
     try {
       const product = await Product.findById(req.params.id);
-      if (!product) throw new HttpError(404, 'Product not found.');
+      if (!product) throw new HttpError(404, 'That product could not be found.');
 
       const data = await readProductBody(req.body);
       const previousImage = product.image;
@@ -120,7 +153,7 @@ router.delete(
   '/products/:id',
   asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id);
-    if (!product) throw new HttpError(404, 'Product not found.');
+    if (!product) throw new HttpError(404, 'That product could not be found.');
     await product.deleteOne();
     removeUploadedImage(product.image);
     res.json({ message: 'Product deleted successfully.' });
@@ -151,7 +184,7 @@ router.get(
 
 const readCategoryName = (body) => {
   const name = String(body.name || '').trim();
-  validate({ name: !name ? 'The name field is required.' : name.length > 255 ? 'The name may not be longer than 255 characters.' : '' });
+  validate({ name: !name ? 'Please enter a category name.' : name.length > 255 ? 'That name is too long.' : '' });
   return name;
 };
 
@@ -195,14 +228,16 @@ router.get(
   '/orders',
   asyncHandler(async (req, res) => {
     const { page, limit, skip } = paginate(req.query);
+    const filter = ['pending', 'completed'].includes(req.query.status) ? { status: req.query.status } : {};
     const [items, total, pending, completed, revenue] = await Promise.all([
-      Order.find().populate('user', 'name email').sort('-createdAt').skip(skip).limit(limit),
+      Order.find(filter).populate('user', 'name email').sort('-createdAt').skip(skip).limit(limit),
       Order.countDocuments(),
       Order.countDocuments({ status: 'pending' }),
       Order.countDocuments({ status: 'completed' }),
       Order.aggregate([{ $match: { status: 'completed' } }, { $group: { _id: null, total: { $sum: '$totalPrice' } } }]),
     ]);
-    res.json({ ...pageResult(items, total, page, limit), stats: { total, pending, completed, revenue: revenue[0]?.total || 0 } });
+    const shown = filter.status ? (filter.status === 'pending' ? pending : completed) : total;
+    res.json({ ...pageResult(items, shown, page, limit), stats: { total, pending, completed, revenue: revenue[0]?.total || 0 } });
   }),
 );
 
@@ -210,9 +245,9 @@ router.patch(
   '/orders/:id/status',
   asyncHandler(async (req, res) => {
     const { status } = req.body;
-    validate({ status: !['pending', 'completed'].includes(status) ? 'Status must be pending or completed.' : '' });
+    validate({ status: !['pending', 'completed'].includes(status) ? 'Choose a valid order status.' : '' });
     const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true }).populate('user', 'name email');
-    if (!order) throw new HttpError(404, 'Order not found.');
+    if (!order) throw new HttpError(404, 'That order could not be found.');
     res.json({ order });
   }),
 );
@@ -235,7 +270,7 @@ router.patch(
   '/users/:id/role',
   asyncHandler(async (req, res) => {
     const { role } = req.body;
-    validate({ role: !['admin', 'user'].includes(role) ? 'Role must be admin or user.' : '' });
+    validate({ role: !['admin', 'user'].includes(role) ? 'Choose a valid role.' : '' });
     if (String(req.user._id) === req.params.id && role !== 'admin') {
       throw new HttpError(409, 'You cannot remove admin access from your own account.');
     }

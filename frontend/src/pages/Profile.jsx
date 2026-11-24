@@ -76,7 +76,7 @@ export default function Profile() {
         <div className="card profile-panel">
           <div className="auth__cardHead">
             <h2>Profile information</h2>
-            <p className="muted">Keep your account details current for orders and account access.</p>
+            <p className="muted">Keep your details up to date so checkout is quick and delivery goes smoothly.</p>
           </div>
           {profileStatus && <div className="chip chip--strong">{profileStatus}</div>}
 
@@ -94,7 +94,7 @@ export default function Profile() {
               </label>
               <label className="field">
                 <span className="field__label">Phone number</span>
-                <input className="input" type="text" value={profile.phone} onChange={setP('phone')} placeholder="+8801XXXXXXXXX" />
+                <input className="input" type="text" value={profile.phone} onChange={setP('phone')} placeholder="+880 1XXX XXXXXX" />
                 <FieldError errors={profileErrors} name="phone" />
               </label>
             </div>

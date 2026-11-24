@@ -19,7 +19,17 @@ import ProductForm from './pages/admin/ProductForm.jsx';
 import AdminProducts from './pages/admin/Products.jsx';
 import AdminUsers from './pages/admin/Users.jsx';
 
-const TITLES = { '/': 'GiftNest - Thoughtful Gifts for Every Occasion', '/shop': 'GiftNest - Shop', '/about': 'GiftNest - About', '/cart': 'GiftNest - Cart' };
+const TITLES = {
+  '/': 'GiftNest | Thoughtful gifts for every occasion',
+  '/shop': 'Shop gifts | GiftNest',
+  '/about': 'About us | GiftNest',
+  '/cart': 'Your cart | GiftNest',
+  '/checkout': 'Checkout | GiftNest',
+  '/orders': 'My orders | GiftNest',
+  '/profile': 'My profile | GiftNest',
+  '/login': 'Sign in | GiftNest',
+  '/register': 'Create account | GiftNest',
+};
 
 export default function App() {
   const { pathname } = useLocation();

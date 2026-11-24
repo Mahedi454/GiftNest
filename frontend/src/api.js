@@ -28,13 +28,13 @@ async function request(method, path, body) {
       body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
     });
   } catch {
-    throw new ApiError('Cannot reach the server. Make sure the backend is running.', 0);
+    throw new ApiError('We could not connect right now. Please check your connection and try again.', 0);
   }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     // A non-JSON error (e.g. 500/502 from the dev proxy) means the API itself is down.
-    const fallback = response.status >= 500 ? 'Cannot reach the server. Make sure the backend is running.' : 'Request failed.';
+    const fallback = response.status >= 500 ? 'We could not connect right now. Please check your connection and try again.' : 'Something went wrong. Please try again.';
     throw new ApiError(data.message || fallback, response.status, data.errors);
   }
   return data;

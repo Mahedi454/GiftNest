@@ -1,9 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, assetUrl, money } from '../../api.js';
-import { ErrorBox, FieldError, Loading, useFetch } from '../../components/common.jsx';
+import { ErrorBox, Loading, useFetch } from '../../components/common.jsx';
 
 const empty = { name: '', category: '', price: '', stock: 0, description: '', isActive: true };
+
+function Field({ label, error, children }) {
+  return (
+    <label className={`afield ${error ? 'has-error' : ''}`}>
+      <span>{label}</span>
+      {children}
+      {error && <em className="afield__error">{error}</em>}
+    </label>
+  );
+}
 
 export default function ProductForm() {
   const { id } = useParams();
@@ -69,96 +79,80 @@ export default function ProductForm() {
   };
 
   return (
-    <section className="section">
-      <div className="section__head">
+    <div className="adm-page">
+      <header className="pagehead">
         <div>
-          <div className="kicker">{editing ? 'Edit product' : 'New product'}</div>
-          <h1>{editing ? 'Edit Product' : 'Add Product'}</h1>
+          <Link className="backlink" to="/admin/products">← All products</Link>
+          <h1>{editing ? 'Edit product' : 'Add a product'}</h1>
+          <p>{editing ? 'Update the details customers see in the store.' : 'Fill in the details below. You can change them any time.'}</p>
         </div>
-      </div>
+      </header>
 
-      <form className="card admin-product-form admin-product-editor" onSubmit={submit}>
-        {message && <div className="admin-form-error" role="alert">{message}</div>}
+      {message && <div className="notice notice--error" role="alert">{message}</div>}
 
-        <div className="admin-product-editor__grid">
-          <div className="admin-product-editor__fields">
-            <div className="grid grid--2">
-              <label className="field">
-                <span className="field__label">Product name</span>
-                <input className="input" type="text" value={form.name} onChange={set('name')} required />
-                <FieldError errors={errors} name="name" />
-              </label>
-              <label className="field">
-                <span className="field__label">Category</span>
-                <select className="input" value={form.category} onChange={set('category')} required>
-                  <option value="">Select category</option>
-                  {categories.data.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                <FieldError errors={errors} name="category" />
-              </label>
-              <label className="field">
-                <span className="field__label">Price</span>
-                <input className="input" type="number" min="0" step="0.01" value={form.price} onChange={set('price')} required />
-                <FieldError errors={errors} name="price" />
-              </label>
-              <label className="field">
-                <span className="field__label">Stock</span>
-                <input className="input" type="number" min="0" value={form.stock} onChange={set('stock')} required />
-                <FieldError errors={errors} name="stock" />
-              </label>
-              <label className="field">
-                <span className="field__label">Upload image</span>
-                <input className="input" type="file" accept="image/*" onChange={(e) => { setFile(e.target.files[0] || null); setRemoveImage(false); }} />
-              </label>
-            </div>
-
-            {editing && product?.image && !file && (
-              <label className="field field--inline admin-product-form__toggle">
-                <input type="checkbox" checked={removeImage} onChange={(e) => setRemoveImage(e.target.checked)} />
-                <span className="field__label">Remove current image from product</span>
-              </label>
-            )}
-
-            <label className="field admin-product-form__full">
-              <span className="field__label">Description</span>
-              <textarea className="input" rows="5" value={form.description} onChange={set('description')} required />
-              <FieldError errors={errors} name="description" />
-            </label>
-
-            <label className="field field--inline admin-product-form__toggle">
-              <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
-              <span className="field__label">Visible on storefront</span>
-            </label>
-
-            <div className="admin-product-form__actions">
-              <button className="btn admin-product-form__submit" type="submit" disabled={busy}>
-                {busy ? 'Saving...' : editing ? 'Save changes' : 'Create product'}
-              </button>
-              <Link className="btn btn--ghost" to="/admin/products">Cancel</Link>
-            </div>
+      <form className="pform" onSubmit={submit}>
+        <div className="panel pform__main">
+          <div className="pform__grid">
+            <Field label="Product name" error={errors.name}>
+              <input value={form.name} onChange={set('name')} placeholder="e.g. Personalised photo frame" required />
+            </Field>
+            <Field label="Category" error={errors.category}>
+              <select value={form.category} onChange={set('category')} required>
+                <option value="">Choose a category</option>
+                {categories.data.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Price (Tk)" error={errors.price}>
+              <input type="number" min="0" step="0.01" value={form.price} onChange={set('price')} required />
+            </Field>
+            <Field label="Stock quantity" error={errors.stock}>
+              <input type="number" min="0" value={form.stock} onChange={set('stock')} required />
+            </Field>
           </div>
 
-          <aside className="card admin-preview">
-            <div className="admin-preview__label">Live preview</div>
-            <div className="admin-preview__media">
-              {previewImage ? (
-                <img src={previewImage} alt={form.name || 'Product preview'} />
-              ) : (
-                <div className="admin-preview__placeholder">{form.name || 'Product'}</div>
-              )}
-            </div>
-            <div className="admin-preview__body">
-              <div className="admin-preview__meta">
-                <span>{categoryName || 'Choose category'}</span>
-                <span>{form.isActive ? 'Visible' : 'Hidden'}</span>
-              </div>
-              <h3>{form.name.trim() || 'Product name'}</h3>
-              <div className="admin-preview__price">{money(form.price)}</div>
-              <p>{form.description.trim() || 'The product description will appear here as you update the form.'}</p>
-            </div>
-          </aside>
+          <Field label="Description" error={errors.description}>
+            <textarea rows="5" value={form.description} onChange={set('description')} placeholder="Tell customers what makes this gift special." required />
+          </Field>
+
+          <Field label="Product image">
+            <input type="file" accept="image/*" onChange={(e) => { setFile(e.target.files[0] || null); setRemoveImage(false); }} />
+          </Field>
+          {editing && product?.image && !file && (
+            <label className="check">
+              <input type="checkbox" checked={removeImage} onChange={(e) => setRemoveImage(e.target.checked)} />
+              <span>Remove the current image</span>
+            </label>
+          )}
+
+          <label className="check">
+            <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />
+            <span>Visible in the store</span>
+          </label>
+
+          <div className="pform__actions">
+            <button className="btn" type="submit" disabled={busy}>{busy ? 'Saving…' : editing ? 'Save changes' : 'Create product'}</button>
+            <Link className="btn btn--ghost" to="/admin/products">Cancel</Link>
+          </div>
         </div>
+
+        <aside className="panel pform__preview">
+          <span className="pform__previewLabel">Preview</span>
+          <div className="ppreview">
+            <div className="ppreview__img">
+              {previewImage ? <img src={previewImage} alt={form.name || 'Product preview'} /> : <span>{form.name || 'Your product'}</span>}
+              <em>{categoryName || 'Category'}</em>
+            </div>
+            <div className="ppreview__body">
+              <h3>{form.name.trim() || 'Product name'}</h3>
+              <p>{form.description.trim() || 'Your product description will appear here.'}</p>
+              <div className="ppreview__row">
+                <strong>{money(form.price, Number.isInteger(Number(form.price)) ? 0 : 2)}</strong>
+                <span className={`pill2 ${form.isActive ? 'pill2--completed' : 'pill2--muted'}`}>{form.isActive ? 'Visible' : 'Hidden'}</span>
+              </div>
+            </div>
+          </div>
+        </aside>
       </form>
-    </section>
+    </div>
   );
 }

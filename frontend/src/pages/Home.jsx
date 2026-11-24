@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, assetUrl, money } from '../api.js';
 import { ErrorBox, useFetch } from '../components/common.jsx';
@@ -19,9 +19,9 @@ const occasions = [
 ];
 
 const whyCards = [
-  { icon: 'search', title: 'Browse curated picks', text: 'A focused collection of gifts for birthdays, campus moments, and everyday surprises, without the clutter.' },
-  { icon: 'bag', title: 'Add to cart in seconds', text: 'Collect your favorites in a simple cart and adjust quantities quickly before checkout.' },
-  { icon: 'truck', title: 'Place a smooth order', text: 'Complete checkout with basic delivery details and follow your order from your account.' },
+  { icon: 'search', title: 'Browse curated picks', text: 'A carefully chosen collection of gifts for birthdays, graduations and everyday surprises, with no clutter.' },
+  { icon: 'bag', title: 'Add to cart in seconds', text: 'Save your favorites in the cart and adjust quantities any time before you check out.' },
+  { icon: 'truck', title: 'Place a smooth order', text: 'Enter your delivery details, place the order, and follow its progress from your account.' },
 ];
 
 function SectionHead({ kicker, title, children }) {
@@ -38,7 +38,17 @@ function HeroVisual({ products }) {
   const { add } = useCart();
   const [active, setActive] = useState(0);
   const [added, setAdded] = useState(false);
+  const [paused, setPaused] = useState(false);
   const current = products[active];
+
+  // Show the next gift every few seconds. Picking a thumbnail restarts the timer,
+  // and hovering or focusing the visual pauses it.
+  useEffect(() => {
+    if (paused || products.length < 2) return undefined;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const id = setTimeout(() => setActive((i) => (i + 1) % products.length), 4500);
+    return () => clearTimeout(id);
+  }, [active, paused, products.length]);
 
   const addToCart = () => {
     add(current);
@@ -47,7 +57,13 @@ function HeroVisual({ products }) {
   };
 
   return (
-    <div className="hv">
+    <div
+      className="hv"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
       <div className="hv__frame">
         {products.map((product, i) => (
           <Link
@@ -134,8 +150,8 @@ export default function Home() {
           </h1>
 
           <p className="lead">
-            Discover curated picks for birthdays, campus surprises, and everyday celebrations, with a smoother
-            shopping experience from first click to checkout.
+            Beautifully curated gifts for birthdays, anniversaries and every celebration in between,
+            easy to choose and delivered with care.
           </p>
 
           <div className="hero2__actions">
@@ -154,14 +170,14 @@ export default function Home() {
           <HeroVisual products={heroProducts} />
         ) : (
           <div className="card empty">
-            <div className="empty__title">No picks yet</div>
-            <div className="empty__subtitle">Add a few products to the catalog to populate this section.</div>
+            <div className="empty__title">New gifts are on the way</div>
+            <div className="empty__subtitle">Check back soon for our latest picks.</div>
           </div>
         )}
       </section>
 
       <section className="home-section">
-        <SectionHead kicker="Why GiftNest" title="A simple gifting flow made for quick decisions" />
+        <SectionHead kicker="Why GiftNest" title="Gifting made simple, from first look to doorstep" />
         <div className="grid grid--3">
           {whyCards.map((card) => (
             <article className="why-card" key={card.title}>

@@ -23,7 +23,7 @@ export function useFetch(loader, deps = []) {
 export function Loading() {
   return (
     <div className="card empty">
-      <div className="empty__title">Loading...</div>
+      <div className="empty__title">Loading…</div>
     </div>
   );
 }
@@ -90,7 +90,7 @@ export function NotFound() {
     <section className="section">
       <div className="card empty">
         <div className="empty__title">Page not found</div>
-        <div className="empty__subtitle">The page you are looking for does not exist.</div>
+        <div className="empty__subtitle">The page you are looking for does not exist or may have moved.</div>
         <Link className="btn" to="/">Back to home</Link>
       </div>
     </section>

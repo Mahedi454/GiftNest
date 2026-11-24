@@ -1,5 +1,5 @@
 export function notFound(req, res) {
-  res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
+  res.status(404).json({ message: 'We could not find what you were looking for.' });
 }
 
 // Express recognises error handlers by their 4-argument signature.
@@ -9,7 +9,7 @@ export function errorHandler(err, _req, res, _next) {
     const message = err.code === 'LIMIT_FILE_SIZE' ? 'Image must be 4MB or smaller.' : err.message;
     return res.status(422).json({ message });
   }
-  if (err.name === 'CastError') return res.status(404).json({ message: 'Resource not found.' });
+  if (err.name === 'CastError') return res.status(404).json({ message: 'We could not find what you were looking for.' });
   if (err.code === 11000) {
     const field = Object.keys(err.keyPattern || {})[0] || 'value';
     const message = `That ${field} is already in use.`;

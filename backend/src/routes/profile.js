@@ -11,9 +11,9 @@ router.put(
   asyncHandler(async (req, res) => {
     const { name, email, phone = '', address = '' } = req.body;
     validate({
-      name: !String(name || '').trim() ? 'The name field is required.' : '',
+      name: !String(name || '').trim() ? 'Please enter your full name.' : '',
       email: !isEmail(email) ? 'Enter a valid email address.' : '',
-      phone: String(phone).length > 30 ? 'The phone may not be longer than 30 characters.' : '',
+      phone: String(phone).length > 30 ? 'That phone number is too long.' : '',
     });
 
     const normalizedEmail = String(email).toLowerCase().trim();
@@ -34,8 +34,8 @@ router.put(
 
     validate({
       currentPassword: !currentPassword || !(await user.matchPassword(currentPassword)) ? 'The current password is incorrect.' : '',
-      password: String(password || '').length < 8 ? 'The password must be at least 8 characters.' : '',
-      passwordConfirmation: password !== passwordConfirmation ? 'The password confirmation does not match.' : '',
+      password: String(password || '').length < 8 ? 'Use at least 8 characters for your password.' : '',
+      passwordConfirmation: password !== passwordConfirmation ? 'The passwords do not match.' : '',
     });
 
     user.password = password;

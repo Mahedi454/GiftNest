@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 const values = [
   { icon: 'layers', title: 'A curated catalog', text: 'A focused selection, organized by category so you can choose with confidence instead of scrolling through clutter.' },
   { icon: 'sliders', title: 'A clean ordering flow', text: 'From the first click to order confirmation, every step stays simple, clear, and reliable.' },
-  { icon: 'receipt', title: 'Easy to manage', text: 'Admins update products, categories, orders, and roles from one tidy panel, so the store stays current.' },
+  { icon: 'receipt', title: 'Always up to date', text: 'Stock, prices and new arrivals are kept current, so what you see is what you can order.' },
 ];
 
 const steps = [

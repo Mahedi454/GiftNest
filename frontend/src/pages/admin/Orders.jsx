@@ -1,109 +1,144 @@
 import { useState } from 'react';
-import { api, money } from '../../api.js';
+import { api, formatDate, money } from '../../api.js';
 import { ErrorBox, Loading, Pagination, useFetch } from '../../components/common.jsx';
 
-function OrderCard({ order, onStatus, onChanged }) {
+function OrderRow({ order, onMessage, onChanged }) {
   const [status, setStatus] = useState(order.status);
+  const [saving, setSaving] = useState(false);
 
-  const save = async (event) => {
-    event.preventDefault();
+  const change = async (event) => {
+    const next = event.target.value;
+    const previous = status;
+    setStatus(next);
+    setSaving(true);
     try {
-      await api.patch(`/admin/orders/${order.id}/status`, { status });
-      onStatus('Order status updated successfully.');
+      await api.patch(`/admin/orders/${order.id}/status`, { status: next });
+      onMessage(`Order #${order.orderNumber} marked as ${next}.`);
       onChanged();
-    } catch (e) {
-      onStatus(e.message);
+    } catch (error) {
+      setStatus(previous);
+      onMessage(error.message);
+    } finally {
+      setSaving(false);
     }
   };
 
-  return (
-    <article className="card admin-order-card">
-      <div className="admin-order-card__top">
-        <div>
-          <div className="kicker">Order #{order.orderNumber}</div>
-          <h3>{order.customerName}</h3>
-          <div className="muted small">{order.user?.email ?? 'Deleted account'}</div>
-        </div>
-        <span className={`status ${order.status === 'completed' ? 'status--delivered' : 'status--pending'}`}>
-          {order.status[0].toUpperCase() + order.status.slice(1)}
-        </span>
-      </div>
+  const firstItem = order.items[0];
+  const more = order.items.length - 1;
 
-      <div className="admin-order-card__grid">
-        <div>
-          <div className="admin-order-card__label">Contact</div>
-          <div>{order.phone}</div>
-          <div className="muted small">{order.address}</div>
+  return (
+    <tr>
+      <td data-label="Order">
+        <div className="tcell">
+        <strong className="t-strong">#{order.orderNumber}</strong>
+        <small className="t-sub">{formatDate(order.createdAt)}</small>
         </div>
-        <div>
-          <div className="admin-order-card__label">Items</div>
-          {order.items.map((item) => (
-            <div className="muted small" key={`${item.product}-${item.name}`}>{item.name} x {item.quantity}</div>
-          ))}
+      </td>
+      <td data-label="Customer">
+        <div className="tcell">
+        <strong className="t-strong">{order.customerName}</strong>
+        <small className="t-sub">{order.user?.email ?? 'Account removed'}</small>
         </div>
-        <div>
-          <div className="admin-order-card__label">Total</div>
-          <div className="admin-order-card__amount">{money(order.totalPrice)}</div>
+      </td>
+      <td data-label="Items">
+        <div className="tcell">
+        <span className="t-clip">{firstItem?.name}{firstItem && firstItem.quantity > 1 ? ` × ${firstItem.quantity}` : ''}</span>
+        {more > 0 && <small className="t-sub">+ {more} more {more === 1 ? 'item' : 'items'}</small>}
         </div>
-        <div>
-          <div className="admin-order-card__label">Update status</div>
-          <form className="admin-order-card__form" onSubmit={save}>
-            <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-            </select>
-            <button className="btn admin-inline-form__button" type="submit">Update status</button>
-          </form>
+      </td>
+      <td data-label="Delivery">
+        <div className="tcell">
+        <span className="t-clip">{order.phone}</span>
+        <small className="t-sub t-clip" title={order.address}>{order.address}</small>
         </div>
-      </div>
-    </article>
+      </td>
+      <td data-label="Total" className="t-num">{money(order.totalPrice, 0)}</td>
+      <td data-label="Status">
+        <select
+          className={`status-select status-select--${status}`}
+          value={status}
+          onChange={change}
+          disabled={saving}
+          aria-label={`Status of order ${order.orderNumber}`}
+        >
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+        </select>
+      </td>
+    </tr>
   );
 }
 
 export default function AdminOrders() {
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState('');
-  const { data, error, loading, reload } = useFetch(() => api.get(`/admin/orders?page=${page}`), [page]);
+  const [filter, setFilter] = useState('all');
+  const [message, setMessage] = useState('');
+  const { data, error, loading, reload } = useFetch(
+    () => api.get(`/admin/orders?page=${page}${filter !== 'all' ? `&status=${filter}` : ''}`),
+    [page, filter],
+  );
 
   if (!data && loading) return <Loading />;
   if (error) return <ErrorBox error={error} />;
   const { items, stats } = data;
 
+  const tabs = [
+    { key: 'all', label: 'All orders', count: stats.total },
+    { key: 'pending', label: 'Pending', count: stats.pending },
+    { key: 'completed', label: 'Completed', count: stats.completed },
+  ];
+
   return (
-    <>
-      <section className="section">
-        <div className="section__head">
-          <div>
-            <h1>Manage orders</h1>
-            <div className="muted">Track customer purchases, delivery details, and order progress from one place.</div>
+    <div className="adm-page">
+      <header className="pagehead">
+        <div>
+          <h1>Orders</h1>
+          <p>Review customer orders and update their progress.</p>
+        </div>
+        <div className="pagehead__stat">
+          <span>Revenue</span>
+          <strong>{money(stats.revenue, 0)}</strong>
+        </div>
+      </header>
+
+      {message && <div className="notice" role="status">{message}</div>}
+
+      <div className="tabs" role="tablist">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={filter === tab.key}
+            className={`tabs__tab ${filter === tab.key ? 'is-active' : ''}`}
+            onClick={() => { setFilter(tab.key); setPage(1); }}
+          >
+            {tab.label} <span>{tab.count}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="tablecard">
+        {items.length === 0 ? (
+          <div className="tablecard__empty">
+            <strong>No orders here</strong>
+            <span>{filter === 'all' ? 'New orders will appear here as customers check out.' : 'There are no orders with this status.'}</span>
           </div>
-        </div>
+        ) : (
+          <table className="dtable">
+            <thead>
+              <tr><th>Order</th><th>Customer</th><th>Items</th><th>Delivery</th><th className="t-num">Total</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {items.map((order) => (
+                <OrderRow key={order.id} order={order} onMessage={setMessage} onChanged={reload} />
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
 
-        {status && <div className="card admin-feedback">{status}</div>}
-
-        <div className="grid grid--4">
-          <article className="card kpi"><div className="kpi__label">Total orders</div><div className="kpi__value">{stats.total}</div></article>
-          <article className="card kpi"><div className="kpi__label">Pending</div><div className="kpi__value">{stats.pending}</div></article>
-          <article className="card kpi"><div className="kpi__label">Completed</div><div className="kpi__value">{stats.completed}</div></article>
-          <article className="card kpi"><div className="kpi__label">Revenue</div><div className="kpi__value">{money(stats.revenue)}</div></article>
-        </div>
-      </section>
-
-      <section className="section section--tight">
-        <div className="admin-order-list">
-          {items.length === 0 ? (
-            <div className="card empty">
-              <div className="empty__title">No orders yet</div>
-              <div className="empty__subtitle">Placed orders will appear here for admin review.</div>
-            </div>
-          ) : (
-            items.map((order) => (
-              <OrderCard key={`${order.id}-${order.status}`} order={order} onStatus={setStatus} onChanged={reload} />
-            ))
-          )}
-        </div>
-        <Pagination page={data.page} pages={data.pages} onChange={setPage} />
-      </section>
-    </>
+      <Pagination page={data.page} pages={data.pages} onChange={setPage} />
+    </div>
   );
 }

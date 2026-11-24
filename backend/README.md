@@ -16,12 +16,20 @@ REST API for GiftNest: Node.js, Express 4, Mongoose (MongoDB Atlas), JWT auth (b
 
 ```bash
 npm install
-cp .env.example .env     # set MONGODB_URI, JWT_SECRET, CLIENT_URL
-npm run seed             # sample categories, products and users
+cp .env.example .env     # set MONGODB_URI, JWT_SECRET, CLIENT_URL, ADMIN_PASSWORD
+npm run seed             # sample categories and products
 npm run dev              # http://localhost:5000
 ```
 
-Seeded accounts (password `password`): `admin@giftnest.com` (admin), `customer@example.com` (customer).
+## Administrator account
+
+The store administrator is `giftnest@admin.com`. You choose the password:
+
+1. Open `backend/.env` and set `ADMIN_PASSWORD=` to a password of your own (8+ characters).
+2. Run `npm run admin`. This creates the account, or resets its password if it already exists.
+3. Sign in on the site with `giftnest@admin.com` and that password. Customers create their own accounts from the Sign up page.
+
+`npm run admin -- --remove-demo` also deletes the old sample accounts (`admin@giftnest.com`, `customer@example.com`) if they exist from an earlier seed.
 
 ## Environment variables
 
@@ -31,6 +39,8 @@ Seeded accounts (password `password`): `admin@giftnest.com` (admin), `customer@e
 | `JWT_SECRET`   | Secret used to sign login tokens                                 |
 | `JWT_EXPIRES_IN` | Token lifetime (default `7d`)                                  |
 | `CLIENT_URL`   | Allowed frontend origin(s), comma-separated (CORS)               |
+| `ADMIN_EMAIL`  | Administrator email (default `giftnest@admin.com`)               |
+| `ADMIN_PASSWORD` | Administrator password, used by `npm run admin`                |
 | `PORT`         | Port to listen on (default `5000`)                               |
 
 ## Deploy
@@ -45,7 +55,8 @@ src/index.js        App entry
 src/models/         User, Category, Product, Order
 src/routes/         auth, catalog, orders, profile, admin
 src/middleware/     auth/roles, image upload, error handling
-src/seed.js         Sample data
+src/seed.js         Sample categories and products
+src/createAdmin.js  Creates the administrator account
 public/images/      Seeded product images
 uploads/            Images uploaded from the admin panel
 ```

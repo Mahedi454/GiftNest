@@ -57,7 +57,7 @@ export default function Footer() {
 
       <div className="container foot__bottom">
         <span>&copy; {new Date().getFullYear()} GiftNest. All rights reserved.</span>
-        <span>Built with MongoDB, Express, React and Node.js</span>
+        <span>Thoughtful gifts, delivered with care.</span>
       </div>
     </footer>
   );

@@ -57,7 +57,7 @@ router.get(
   '/products/:id',
   asyncHandler(async (req, res) => {
     const product = await Product.findOne({ _id: req.params.id, isActive: true }).populate('category');
-    if (!product) throw new HttpError(404, 'Product not found.');
+    if (!product) throw new HttpError(404, 'That product could not be found.');
 
     const relatedProducts = await Product.find({ isActive: true, _id: { $ne: product._id } })
       .populate('category')

@@ -2,20 +2,21 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, assetUrl, money } from '../../api.js';
 import { ErrorBox, Loading, Pagination, useFetch } from '../../components/common.jsx';
+import Icon from '../../components/Icon.jsx';
 
 export default function AdminProducts() {
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState('');
+  const [message, setMessage] = useState('');
   const { data, error, loading, reload } = useFetch(() => api.get(`/admin/products?page=${page}`), [page]);
 
   const remove = async (product) => {
-    if (!window.confirm(`Delete "${product.name}"?`)) return;
+    if (!window.confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
     try {
       const res = await api.delete(`/admin/products/${product.id}`);
-      setStatus(res.message);
+      setMessage(res.message);
       reload();
     } catch (e) {
-      setStatus(e.message);
+      setMessage(e.message);
     }
   };
 
@@ -23,77 +24,88 @@ export default function AdminProducts() {
   if (error) return <ErrorBox error={error} />;
   const { items, stats } = data;
 
+  const cards = [
+    { label: 'Products', value: stats.total, icon: 'box', tone: 'violet' },
+    { label: 'Visible in store', value: stats.active, icon: 'check', tone: 'teal' },
+    { label: 'Categories', value: stats.categories, icon: 'tag', tone: 'pink' },
+    { label: 'Low stock', value: stats.lowStock, icon: 'alert', tone: 'amber' },
+  ];
+
   return (
-    <>
-      <section className="section">
-        <div className="section__head">
-          <div>
-            <h1>Manage products</h1>
-            <div className="muted">Live catalog management for products, stock, categories, and storefront visibility.</div>
-          </div>
-          <Link className="btn" to="/admin/products/new">Add product</Link>
+    <div className="adm-page">
+      <header className="pagehead">
+        <div>
+          <h1>Products</h1>
+          <p>Add, edit and organise your products, stock levels and visibility.</p>
         </div>
-
-        {status && <div className="card admin-feedback">{status}</div>}
-
-        <div className="grid grid--4">
-          <article className="card kpi"><div className="kpi__label">Products</div><div className="kpi__value">{stats.total}</div></article>
-          <article className="card kpi"><div className="kpi__label">Active</div><div className="kpi__value">{stats.active}</div></article>
-          <article className="card kpi"><div className="kpi__label">Categories</div><div className="kpi__value">{stats.categories}</div></article>
-          <article className="card kpi"><div className="kpi__label">Low stock</div><div className="kpi__value">{stats.lowStock}</div></article>
+        <div className="pagehead__actions">
+          <Link className="btn" to="/admin/products/new"><Icon name="plus" width={2.4} /> Add product</Link>
         </div>
-      </section>
+      </header>
 
-      <section className="section section--tight">
-        <div className="card table">
-          <div className="table__row table__head table__row--products">
-            <div>Product</div><div>Category</div><div>Stock</div><div>Price</div><div>Status</div><div>Actions</div>
-          </div>
+      {message && <div className="notice" role="status">{message}</div>}
 
-          {items.length === 0 ? (
-            <div className="empty">
-              <div className="empty__title">No products yet</div>
-              <div className="empty__subtitle">Create your first product to start managing the catalog.</div>
+      <section className="kpis kpis--compact" aria-label="Product figures">
+        {cards.map((card, i) => (
+          <article className={`kpi2 kpi2--${card.tone}`} key={card.label} style={{ '--i': i }}>
+            <span className="kpi2__icon"><Icon name={card.icon} /></span>
+            <div className="kpi2__body">
+              <span className="kpi2__label">{card.label}</span>
+              <strong className="kpi2__value">{card.value}</strong>
             </div>
-          ) : (
-            items.map((product) => (
-              <div className="table__row table__row--products" key={product.id}>
-                <div>
-                  <div className="admin-listing">
-                    <div className="admin-listing__thumb">
-                      {product.image ? (
-                        <img src={assetUrl(product.image)} alt={product.name} />
-                      ) : (
-                        <div className="admin-listing__placeholder">{product.name[0].toUpperCase()}</div>
-                      )}
-                    </div>
-                    <div className="admin-listing__content">
-                      <strong>{product.name}</strong>
-                      <div className="muted small">
-                        {product.description.length > 56 ? `${product.description.slice(0, 55).trimEnd()}…` : product.description}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div>{product.category?.name || 'No category'}</div>
-                <div>{product.stock}</div>
-                <div>{money(product.price)}</div>
-                <div>
-                  <span className={`status ${product.isActive ? 'status--delivered' : 'status--pending'}`}>
-                    {product.isActive ? 'Active' : 'Hidden'}
-                  </span>
-                </div>
-                <div className="table__actions">
-                  <Link className="btn btn--ghost btn--small" to={`/admin/products/${product.id}/edit`}>Edit</Link>
-                  <button className="btn btn--danger btn--small" type="button" onClick={() => remove(product)}>Delete</button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <Pagination page={data.page} pages={data.pages} onChange={setPage} />
+          </article>
+        ))}
       </section>
-    </>
+
+      <div className="tablecard">
+        {items.length === 0 ? (
+          <div className="tablecard__empty">
+            <strong>No products yet</strong>
+            <span>Add your first product to get the store started.</span>
+          </div>
+        ) : (
+          <table className="dtable">
+            <thead>
+              <tr><th>Product</th><th>Category</th><th>Stock</th><th className="t-num">Price</th><th>Status</th><th className="t-actions">Actions</th></tr>
+            </thead>
+            <tbody>
+              {items.map((product) => (
+                <tr key={product.id}>
+                  <td data-label="Product">
+                    <div className="pcell">
+                      <span className="pcell__thumb">
+                        {product.image ? <img src={assetUrl(product.image)} alt="" /> : <Icon name="box" />}
+                      </span>
+                      <span className="pcell__text">
+                        <strong className="t-strong">{product.name}</strong>
+                        <small className="t-sub t-clip">{product.description}</small>
+                      </span>
+                    </div>
+                  </td>
+                  <td data-label="Category">{product.category?.name || 'Uncategorised'}</td>
+                  <td data-label="Stock">
+                    <span className={`pill2 ${product.stock === 0 ? 'pill2--out' : product.stock <= 5 ? 'pill2--low' : 'pill2--ok'}`}>
+                      {product.stock === 0 ? 'Sold out' : product.stock <= 5 ? `${product.stock} left` : `${product.stock} in stock`}
+                    </span>
+                  </td>
+                  <td data-label="Price" className="t-num">{money(product.price, Number.isInteger(product.price) ? 0 : 2)}</td>
+                  <td data-label="Status">
+                    <span className={`pill2 ${product.isActive ? 'pill2--completed' : 'pill2--muted'}`}>{product.isActive ? 'Visible' : 'Hidden'}</span>
+                  </td>
+                  <td data-label="Actions" className="t-actions">
+                    <div className="row-actions">
+                      <Link className="icon-btn" to={`/admin/products/${product.id}/edit`} aria-label={`Edit ${product.name}`} title="Edit"><Icon name="edit" /></Link>
+                      <button className="icon-btn icon-btn--danger" type="button" onClick={() => remove(product)} aria-label={`Delete ${product.name}`} title="Delete"><Icon name="trash" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <Pagination page={data.page} pages={data.pages} onChange={setPage} />
+    </div>
   );
 }

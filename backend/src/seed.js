@@ -5,9 +5,7 @@ import { fileURLToPath } from 'node:url';
 import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 import Category from './models/Category.js';
-import Order from './models/Order.js';
 import Product from './models/Product.js';
-import User from './models/User.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const imageDir = path.resolve(here, '../public/images/products');
@@ -44,17 +42,8 @@ const products = [
   ['Modern Aesthetic Wall Art Frame', 'Personalized Gifts', 1790, 'modern-aesthetic-wall-art-frame-1775393307.webp', 'A modern wall art frame designed for home decor and elegant gifting.', 12],
 ];
 
-async function upsertUser(email, data) {
-  // Existing accounts are left untouched so re-seeding never resets a changed password.
-  const existing = await User.findOne({ email });
-  return existing || User.create({ email, ...data });
-}
-
 async function seed() {
   await connectDB();
-
-  await upsertUser('admin@giftnest.com', { name: 'GiftNest Admin', password: 'password', role: 'admin' });
-  const customer = await upsertUser('customer@example.com', { name: 'GiftNest Customer', password: 'password', role: 'user' });
 
   const categoryDocs = {};
   for (const name of categories) {
@@ -71,23 +60,8 @@ async function seed() {
     );
   }
 
-  if ((await Order.countDocuments()) === 0) {
-    const [a, b, c] = await Product.find().sort('createdAt').limit(3);
-    const make = (status, lines) => {
-      const items = lines.map(([p, quantity]) => ({ product: p._id, name: p.name, image: p.image, price: p.price, quantity }));
-      const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-      return {
-        user: customer._id, customerName: customer.name, phone: '01700000000', address: 'House 12, Road 5, Dhaka',
-        items, subtotal, shipping: 60, totalPrice: subtotal + 60, status,
-      };
-    };
-    if (a && b) await Order.create(make('pending', [[a, 2], [b, 1]]));
-    if (b && c) await Order.create(make('completed', [[b, 1], [c, 1]]));
-  }
-
-  console.log(`Seeded: ${await Category.countDocuments()} categories, ${await Product.countDocuments()} products, ${await User.countDocuments()} users`);
-  console.log('Admin login:    admin@giftnest.com / password');
-  console.log('Customer login: customer@example.com / password');
+  console.log(`Seeded ${await Category.countDocuments()} categories and ${await Product.countDocuments()} products.`);
+  console.log('Next: set ADMIN_PASSWORD in backend/.env and run "npm run admin" to create the administrator.');
 }
 
 seed()
