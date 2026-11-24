@@ -1,0 +1,7 @@
+node_modules
+.env
+*.log
+
+# Images uploaded through the admin panel (seeded images live in public/images)
+uploads/*
+!uploads/.gitkeep

@@ -1,0 +1,22 @@
+# Backend only. Deploy the React app (client/) separately, e.g. on Vercel or Netlify.
+services:
+  - type: web
+    name: giftnest-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      # Your deployed frontend origin, e.g. https://giftnest.vercel.app
+      - key: CLIENT_URL
+        sync: false

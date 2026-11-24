@@ -1,0 +1,89 @@
+export default function About() {
+  return (
+    <>
+      <section className="section">
+        <div className="section__head">
+          <div>
+            <div className="kicker">About GiftNest</div>
+            <h1>Thoughtful gifting with a more refined shopping experience.</h1>
+          </div>
+          <div className="muted">GiftNest is built around curated products, clear presentation, and a dependable checkout journey.</div>
+        </div>
+
+        <div className="grid grid--2 about-page__intro">
+          <article className="card prose about-page__panel">
+            <div className="kicker">Our approach</div>
+            <h2>Curated products, cleaner decisions</h2>
+            <p>
+              GiftNest is designed to make gift shopping feel lighter, faster, and more considered. Instead of overwhelming
+              customers with clutter, the experience focuses on a selective catalog, clear product presentation, and a checkout
+              flow that feels simple from start to finish.
+            </p>
+            <p>
+              Every part of the storefront is shaped around ease of use, from discoverability and cart handling to order
+              placement and admin-side catalog maintenance. The result is a store experience that feels polished, readable,
+              and easy to trust.
+            </p>
+          </article>
+
+          <article className="card about-page__panel about-page__panel--accent">
+            <div className="kicker">What we value</div>
+            <h2>Presentation, clarity, and consistency</h2>
+            <div className="about-page__list">
+              <div>
+                <strong>Curated catalog</strong>
+                <p>Products are organized to help customers make confident choices without unnecessary friction.</p>
+              </div>
+              <div>
+                <strong>Clean ordering flow</strong>
+                <p>The path from product discovery to checkout is structured to stay simple and reliable.</p>
+              </div>
+              <div>
+                <strong>Professional management</strong>
+                <p>The admin experience supports product updates, category organization, order handling, and role control.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className="section section--tight">
+        <div className="section__head">
+          <div>
+            <div className="kicker">Why customers choose us</div>
+            <h2>A gift store experience shaped around confidence</h2>
+          </div>
+        </div>
+
+        <div className="grid grid--3">
+          <article className="feature-panel card feature-panel--home">
+            <div className="feature-panel__icon">01</div>
+            <h3>Carefully selected products</h3>
+            <p>GiftNest focuses on presentable, occasion-friendly items that feel suitable for meaningful personal and professional gifting.</p>
+          </article>
+          <article className="feature-panel card feature-panel--home">
+            <div className="feature-panel__icon">02</div>
+            <h3>Clear and modern browsing</h3>
+            <p>The storefront is organized to keep product details readable, categories understandable, and actions easy to complete.</p>
+          </article>
+          <article className="feature-panel card feature-panel--home">
+            <div className="feature-panel__icon">03</div>
+            <h3>Smooth fulfillment flow</h3>
+            <p>From cart to checkout, the overall journey is built to reduce confusion and create a more dependable shopping experience.</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="section section--tight">
+        <div className="card prose about-page__closing">
+          <div className="kicker">Our promise</div>
+          <h2>Make gifting easier, more elegant, and more dependable.</h2>
+          <p>
+            GiftNest brings together curated products, simple interaction patterns, and a professional storefront structure
+            to create an experience that feels approachable for customers and manageable for administrators.
+          </p>
+        </div>
+      </section>
+    </>
+  );
+}

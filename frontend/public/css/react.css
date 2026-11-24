@@ -1,0 +1,26 @@
+/* Small additions needed now that the UI is rendered by React. */
+.navlinks a.active,
+.admin-nav a.active {
+  background: rgba(255, 62, 155, 0.14);
+  color: var(--accent3);
+}
+
+/* Centre the heading and subtitle at the top of form cards (login, register, profile). */
+.auth__cardHead {
+  text-align: center;
+}
+
+button.pagination__link {
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cartrow__form .input {
+  max-width: 96px;
+}
+
+.admin-preview__media img,
+.product__mediaImage {
+  max-width: 100%;
+}

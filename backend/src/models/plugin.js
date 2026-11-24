@@ -1,0 +1,13 @@
+// Exposes `id` instead of `_id`/`__v` in JSON responses and never leaks password hashes.
+export function jsonPlugin(schema) {
+  schema.set('toJSON', {
+    virtuals: true,
+    versionKey: false,
+    transform: (_doc, ret) => {
+      ret.id = String(ret._id);
+      delete ret._id;
+      delete ret.password;
+      return ret;
+    },
+  });
+}
