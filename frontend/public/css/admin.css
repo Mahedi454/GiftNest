@@ -714,6 +714,7 @@ body.admin {
   font-size: 14px;
   font-weight: 700;
   color: var(--muted);
+  white-space: nowrap;
   cursor: pointer;
   transition: background .2s ease, color .2s ease;
 }

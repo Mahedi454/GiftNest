@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { assetUrl, money } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
+import { Stepper } from './Checkout.jsx';
 
 const fmt = (value) => money(value, Number.isInteger(value) ? 0 : 2);
 
@@ -34,6 +35,8 @@ export default function Cart() {
         <h1>Shopping cart</h1>
         <p className="muted">{count} {count === 1 ? 'item' : 'items'} ready for checkout.</p>
       </section>
+
+      <Stepper current={0} />
 
       <div className="cart2">
         <div className="cart2__list">

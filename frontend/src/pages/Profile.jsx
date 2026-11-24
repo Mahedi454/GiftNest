@@ -1,48 +1,68 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { api } from '../api.js';
-import { FieldError } from '../components/common.jsx';
+import { Link, useNavigate } from 'react-router-dom';
+import { api, formatDate, initials, money } from '../api.js';
+import { PasswordField, StrengthMeter, TextAreaField, TextField } from '../components/Field.jsx';
+import { useFetch } from '../components/common.jsx';
+import Icon from '../components/Icon.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+
+function Notice({ tone = 'ok', children }) {
+  if (!children) return null;
+  return <div className={`acc-notice acc-notice--${tone}`} role={tone === 'ok' ? 'status' : 'alert'}>{children}</div>;
+}
 
 export default function Profile() {
   const { user, setUser, logout } = useAuth();
   const navigate = useNavigate();
+  const orders = useFetch(() => api.get('/orders/mine'));
 
   const [profile, setProfile] = useState({ name: user.name, email: user.email, phone: user.phone || '', address: user.address || '' });
   const [profileErrors, setProfileErrors] = useState({});
-  const [profileStatus, setProfileStatus] = useState('');
+  const [profileNote, setProfileNote] = useState({ tone: 'ok', text: '' });
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const [pw, setPw] = useState({ currentPassword: '', password: '', passwordConfirmation: '' });
   const [pwErrors, setPwErrors] = useState({});
-  const [pwStatus, setPwStatus] = useState('');
+  const [pwNote, setPwNote] = useState({ tone: 'ok', text: '' });
+  const [savingPw, setSavingPw] = useState(false);
 
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
 
+  const list = orders.data?.orders || [];
+  const spent = list.reduce((sum, o) => sum + o.totalPrice, 0);
+
   const saveProfile = async (event) => {
     event.preventDefault();
     setProfileErrors({});
-    setProfileStatus('');
+    setProfileNote({ tone: 'ok', text: '' });
+    setSavingProfile(true);
     try {
       const { user: updated } = await api.put('/profile', profile);
       setUser(updated);
-      setProfileStatus('Profile updated successfully.');
+      setProfileNote({ tone: 'ok', text: 'Your details have been saved.' });
     } catch (error) {
-      setProfileErrors(error.errors);
-      setProfileStatus(error.message);
+      setProfileErrors(error.errors || {});
+      if (!Object.keys(error.errors || {}).length) setProfileNote({ tone: 'error', text: error.message });
+    } finally {
+      setSavingProfile(false);
     }
   };
 
   const savePassword = async (event) => {
     event.preventDefault();
     setPwErrors({});
-    setPwStatus('');
+    setPwNote({ tone: 'ok', text: '' });
+    setSavingPw(true);
     try {
       await api.put('/profile/password', pw);
       setPw({ currentPassword: '', password: '', passwordConfirmation: '' });
-      setPwStatus('Password updated successfully.');
+      setPwNote({ tone: 'ok', text: 'Your password has been updated.' });
     } catch (error) {
-      setPwErrors(error.errors);
+      setPwErrors(error.errors || {});
+      if (!Object.keys(error.errors || {}).length) setPwNote({ tone: 'error', text: error.message });
+    } finally {
+      setSavingPw(false);
     }
   };
 
@@ -63,91 +83,96 @@ export default function Profile() {
   const setW = (key) => (e) => setPw({ ...pw, [key]: e.target.value });
 
   return (
-    <section className="section auth">
-      <div className="section__head">
-        <div>
-          <div className="kicker">My account</div>
-          <h1>Manage your profile</h1>
-        </div>
-        <div className="muted">Update your personal details, delivery contact, and account password.</div>
-      </div>
+    <>
+      <section className="shop-head">
+        <div className="kicker">My account</div>
+        <h1>Hello, {user.name.split(' ')[0]}</h1>
+        <p className="muted">Manage your details, password and orders in one place.</p>
+      </section>
 
-      <div className="profile-shell">
-        <div className="card profile-panel">
-          <div className="auth__cardHead">
-            <h2>Profile information</h2>
-            <p className="muted">Keep your details up to date so checkout is quick and delivery goes smoothly.</p>
+      <div className="acc">
+        <aside className="acc__side">
+          <div className="acc-card">
+            <span className="acc-card__avatar">{initials(user.name)}</span>
+            <h2>{user.name}</h2>
+            <p>{user.email}</p>
+            {user.createdAt && <small>Member since {formatDate(user.createdAt, false)}</small>}
+
+            <dl className="acc-card__stats">
+              <div><dt>{orders.loading ? '–' : list.length}</dt><dd>Orders</dd></div>
+              <div><dt>{orders.loading ? '–' : money(spent, 0)}</dt><dd>Total spent</dd></div>
+            </dl>
+
+            <nav className="acc-card__links" aria-label="Account">
+              <Link to="/orders"><Icon name="receipt" /> My orders</Link>
+              <Link to="/shop"><Icon name="gift" /> Keep shopping</Link>
+              <button type="button" onClick={() => { logout(); navigate('/'); }}><Icon name="logout" /> Log out</button>
+            </nav>
           </div>
-          {profileStatus && <div className="chip chip--strong">{profileStatus}</div>}
+        </aside>
 
-          <form className="auth__form" onSubmit={saveProfile}>
-            <div className="formgrid">
-              <label className="field">
-                <span className="field__label">Full name</span>
-                <input className="input" type="text" value={profile.name} onChange={setP('name')} required />
-                <FieldError errors={profileErrors} name="name" />
-              </label>
-              <label className="field">
-                <span className="field__label">Email</span>
-                <input className="input" type="email" value={profile.email} onChange={setP('email')} required />
-                <FieldError errors={profileErrors} name="email" />
-              </label>
-              <label className="field">
-                <span className="field__label">Phone number</span>
-                <input className="input" type="text" value={profile.phone} onChange={setP('phone')} placeholder="+880 1XXX XXXXXX" />
-                <FieldError errors={profileErrors} name="phone" />
-              </label>
+        <div className="acc__main">
+          <form className="panel acc-panel" onSubmit={saveProfile} noValidate>
+            <div className="acc-panel__head">
+              <span className="acc-panel__icon"><Icon name="user" /></span>
+              <div>
+                <h2>Personal details</h2>
+                <p>These are used to fill in checkout for you.</p>
+              </div>
             </div>
-            <label className="field">
-              <span className="field__label">Address</span>
-              <textarea className="input" rows="4" value={profile.address} onChange={setP('address')} placeholder="Your delivery address" />
-            </label>
-            <button className="btn" type="submit">Save profile</button>
+
+            <Notice tone={profileNote.tone}>{profileNote.text}</Notice>
+
+            <div className="auth2__row">
+              <TextField label="Full name" value={profile.name} onChange={setP('name')} autoComplete="name" required error={profileErrors.name} />
+              <TextField label="Email" type="email" value={profile.email} onChange={setP('email')} autoComplete="email" required error={profileErrors.email} />
+            </div>
+            <TextField label="Phone number" type="tel" value={profile.phone} onChange={setP('phone')} placeholder="+880 1XXX XXXXXX" autoComplete="tel" error={profileErrors.phone} />
+            <TextAreaField label="Delivery address" rows="3" value={profile.address} onChange={setP('address')} placeholder="House, road, area and city" autoComplete="street-address" error={profileErrors.address} />
+
+            <div className="acc-panel__actions">
+              <button className="btn" type="submit" disabled={savingProfile}>{savingProfile ? 'Saving…' : 'Save changes'}</button>
+            </div>
           </form>
-        </div>
 
-        <div className="card profile-panel">
-          <div className="auth__cardHead">
-            <h2>Change password</h2>
-            <p className="muted">Choose a strong password to keep your account secure.</p>
-          </div>
-          {pwStatus && <div className="chip chip--strong">{pwStatus}</div>}
+          <form className="panel acc-panel" onSubmit={savePassword} noValidate>
+            <div className="acc-panel__head">
+              <span className="acc-panel__icon"><Icon name="lock" /></span>
+              <div>
+                <h2>Password</h2>
+                <p>Choose a strong password to keep your account secure.</p>
+              </div>
+            </div>
 
-          <form className="auth__form" onSubmit={savePassword}>
-            <label className="field">
-              <span className="field__label">Current password</span>
-              <input className="input" type="password" value={pw.currentPassword} onChange={setW('currentPassword')} autoComplete="current-password" />
-              <FieldError errors={pwErrors} name="currentPassword" />
-            </label>
-            <label className="field">
-              <span className="field__label">New password</span>
-              <input className="input" type="password" value={pw.password} onChange={setW('password')} autoComplete="new-password" />
-              <FieldError errors={pwErrors} name="password" />
-            </label>
-            <label className="field">
-              <span className="field__label">Confirm new password</span>
-              <input className="input" type="password" value={pw.passwordConfirmation} onChange={setW('passwordConfirmation')} autoComplete="new-password" />
-              <FieldError errors={pwErrors} name="passwordConfirmation" />
-            </label>
-            <button className="btn" type="submit">Update password</button>
+            <Notice tone={pwNote.tone}>{pwNote.text}</Notice>
+
+            <PasswordField label="Current password" value={pw.currentPassword} onChange={setW('currentPassword')} autoComplete="current-password" error={pwErrors.currentPassword} />
+            <div className="auth2__row">
+              <PasswordField label="New password" value={pw.password} onChange={setW('password')} autoComplete="new-password" placeholder="At least 8 characters" error={pwErrors.password} />
+              <PasswordField label="Confirm new password" value={pw.passwordConfirmation} onChange={setW('passwordConfirmation')} autoComplete="new-password" error={pwErrors.passwordConfirmation} />
+            </div>
+            <StrengthMeter value={pw.password} />
+
+            <div className="acc-panel__actions">
+              <button className="btn" type="submit" disabled={savingPw}>{savingPw ? 'Updating…' : 'Update password'}</button>
+            </div>
           </form>
-        </div>
 
-        <div className="card profile-panel">
-          <div className="auth__cardHead">
-            <h2>Delete account</h2>
-            <p className="muted">This permanently removes your account. Enter your password to confirm.</p>
-          </div>
-          <form className="auth__form" onSubmit={deleteAccount}>
-            <label className="field">
-              <span className="field__label">Password</span>
-              <input className="input" type="password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} required autoComplete="current-password" />
-              {deleteError && <span className="muted">{deleteError}</span>}
-            </label>
-            <button className="btn btn--danger" type="submit">Delete account</button>
+          <form className="panel acc-panel acc-panel--danger" onSubmit={deleteAccount} noValidate>
+            <div className="acc-panel__head">
+              <span className="acc-panel__icon acc-panel__icon--danger"><Icon name="alert" /></span>
+              <div>
+                <h2>Delete account</h2>
+                <p>This permanently removes your account. Your past orders stay on record with the store.</p>
+              </div>
+            </div>
+            <PasswordField label="Confirm with your password" value={deletePassword} onChange={(e) => setDeletePassword(e.target.value)} autoComplete="current-password" error={deleteError} />
+            <div className="acc-panel__actions">
+              <button className="btn btn--danger" type="submit" disabled={!deletePassword}>Delete my account</button>
+            </div>
           </form>
         </div>
       </div>
-    </section>
+    </>
   );
 }

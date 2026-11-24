@@ -11,6 +11,17 @@ export function TextField({ label, error, className = '', ...input }) {
   );
 }
 
+export function TextAreaField({ label, error, className = '', ...input }) {
+  const id = useId();
+  return (
+    <div className={`fld ${error ? 'has-error' : ''} ${className}`}>
+      <label htmlFor={id}>{label}</label>
+      <textarea id={id} className="fld__input fld__input--area" aria-invalid={Boolean(error)} aria-describedby={error ? `${id}-err` : undefined} {...input} />
+      {error && <span className="fld__error" id={`${id}-err`} role="alert">{error}</span>}
+    </div>
+  );
+}
+
 // Password input with a show/hide (eye) button.
 export function PasswordField({ label, error, className = '', ...input }) {
   const id = useId();
