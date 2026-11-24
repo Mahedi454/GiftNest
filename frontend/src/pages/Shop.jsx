@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
-import { ErrorBox, Loading, Pagination, useFetch } from '../components/common.jsx';
+import { ErrorBox, Pagination, useFetch } from '../components/common.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+
+function SkeletonGrid() {
+  return (
+    <div className="shop-grid" aria-busy="true" aria-label="Loading products">
+      {Array.from({ length: 8 }, (_, i) => <span key={i} className="skeleton pcard-skeleton" />)}
+    </div>
+  );
+}
 
 export default function Shop() {
   const [params, setParams] = useSearchParams();
@@ -10,10 +18,26 @@ export default function Shop() {
   const category = params.get('category') || '';
   const page = Number(params.get('page')) || 1;
 
-  const [form, setForm] = useState({ search, category });
+  const [text, setText] = useState(search);
   useEffect(() => {
-    setForm({ search, category });
-  }, [search, category]);
+    setText(search);
+  }, [search]);
+
+  // Changing a filter always goes back to page 1, unless a page is passed explicitly.
+  const update = (changes) => {
+    const next = new URLSearchParams(params);
+    Object.entries(changes).forEach(([key, value]) => (value ? next.set(key, value) : next.delete(key)));
+    if (!('page' in changes)) next.delete('page');
+    setParams(next);
+  };
+
+  // Search as you type, after a short pause.
+  useEffect(() => {
+    if (text.trim() === search) return undefined;
+    const id = setTimeout(() => update({ search: text.trim() }), 400);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
 
   const categories = useFetch(() => api.get('/categories'));
   const products = useFetch(() => {
@@ -23,84 +47,86 @@ export default function Shop() {
     return api.get(`/products?${query}`);
   }, [search, category, page]);
 
-  const apply = (next) => {
-    const query = {};
-    Object.entries(next).forEach(([key, value]) => value && (query[key] = value));
-    setParams(query);
-  };
+  const hasFilters = Boolean(search || category);
+  const total = products.data?.total;
 
-  const submit = (event) => {
-    event.preventDefault();
-    apply({ search: form.search.trim(), category: form.category });
+  const goToPage = (n) => {
+    update({ page: n > 1 ? String(n) : '' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <>
-      <section className="section section--tight">
-        <div className="section__head">
-          <div>
-            <div className="kicker">Product Listing</div>
-            <h1>Shop all products</h1>
-          </div>
-          <div className="muted">A clean product grid built with React and a reusable product card component.</div>
+      <section className="shop-head">
+        <div>
+          <div className="kicker">Shop</div>
+          <h1>Find a gift they will love</h1>
+          <p className="muted">Browse the full collection, or narrow it down by category.</p>
         </div>
       </section>
 
-      <section className="section">
-        <form className="card" onSubmit={submit}>
-          <div className="grid grid--2">
-            <label className="field">
-              <span className="field__label">Search</span>
-              <input
-                className="input"
-                type="search"
-                value={form.search}
-                onChange={(e) => setForm({ ...form, search: e.target.value })}
-                placeholder="Search gifts"
-              />
-            </label>
-
-            <label className="field">
-              <span className="field__label">Category</span>
-              <select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                <option value="">All categories</option>
-                {categories.data?.categories.map((c) => (
-                  <option key={c.id} value={c.name}>{c.name}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="admin-product-form__actions">
-            <button className="btn" type="submit">Filter</button>
-            <button className="btn btn--ghost" type="button" onClick={() => apply({})}>Reset</button>
-          </div>
+      <section className="shop-tools">
+        <form className="searchbox" role="search" onSubmit={(e) => { e.preventDefault(); update({ search: text.trim() }); }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM21 21l-4.3-4.3" />
+          </svg>
+          <input type="search" value={text} onChange={(e) => setText(e.target.value)} placeholder="Search gifts, e.g. birthday, frame, mug" aria-label="Search gifts" />
         </form>
 
-        {products.loading ? (
-          <Loading />
-        ) : products.error ? (
-          <ErrorBox error={products.error} />
-        ) : (
-          <>
-            <div className="grid grid--4">
-              {products.data.items.length ? (
-                products.data.items.map((product) => <ProductCard key={product.id} product={product} />)
-              ) : (
-                <div className="card empty shop-empty">
-                  <div className="empty__title">No products found</div>
-                  <div className="empty__subtitle">Create products from the admin panel and they will appear here.</div>
-                </div>
-              )}
-            </div>
-            <Pagination
-              page={products.data.page}
-              pages={products.data.pages}
-              onChange={(n) => setParams({ ...Object.fromEntries(params), page: n })}
-            />
-          </>
-        )}
+        <div className="chips" role="tablist" aria-label="Categories">
+          <button type="button" className={`chip-btn ${!category ? 'is-active' : ''}`} onClick={() => update({ category: '' })}>All</button>
+          {categories.data?.categories.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`chip-btn ${category === c.name ? 'is-active' : ''}`}
+              onClick={() => update({ category: category === c.name ? '' : c.name })}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="shop-meta">
+          <span>
+            {products.loading && total === undefined ? 'Loading…' : `${total ?? 0} ${total === 1 ? 'gift' : 'gifts'}`}
+            {search && <> for “{search}”</>}
+          </span>
+          {hasFilters && (
+            <button type="button" className="shop-meta__clear" onClick={() => { setText(''); setParams({}); }}>Clear filters</button>
+          )}
+        </div>
       </section>
+
+      {products.loading ? (
+        <SkeletonGrid />
+      ) : products.error ? (
+        <ErrorBox error={products.error} />
+      ) : products.data.items.length === 0 ? (
+        <div className="shop-empty">
+          <div className="shop-empty__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM21 21l-4.3-4.3" />
+            </svg>
+          </div>
+          <h2>No gifts found</h2>
+          <p className="muted">Try a different word or category, or clear the filters.</p>
+          <button type="button" className="btn" onClick={() => { setText(''); setParams({}); }}>Clear filters</button>
+        </div>
+      ) : (
+        <>
+          <div className="shop-grid">
+            {products.data.items.map((product, i) => (
+              <ProductCard key={product.id} product={product} index={i} />
+            ))}
+          </div>
+          <Pagination page={products.data.page} pages={products.data.pages} onChange={goToPage} />
+        </>
+      )}
+
+      <div className="shop-foot">
+        <Link className="link" to="/">← Back to home</Link>
+      </div>
     </>
   );
 }
