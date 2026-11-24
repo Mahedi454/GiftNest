@@ -151,6 +151,7 @@
 }
 .nav__signup {
   padding: 12px 22px;
+  white-space: nowrap;
 }
 .nav__desktop {
   display: contents;
@@ -433,6 +434,12 @@
   }
   .foot__brand {
     grid-column: 1 / -1;
+  }
+}
+@media (max-width: 640px) {
+  /* The mobile menu already has Sign up; keep the bar uncluttered. */
+  .nav__signup {
+    display: none;
   }
 }
 @media (max-width: 480px) {

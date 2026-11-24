@@ -8,12 +8,16 @@ const router = Router();
 router.post(
   '/register',
   asyncHandler(async (req, res) => {
-    const { name, email, password, passwordConfirmation } = req.body;
+    const { firstName, lastName, email, password, passwordConfirmation } = req.body;
+    const first = String(firstName || '').trim();
+    const last = String(lastName || '').trim();
+
     validate({
-      name: !String(name || '').trim() ? 'The name field is required.' : '',
+      firstName: !first ? 'First name is required.' : first.length > 120 ? 'First name is too long.' : '',
+      lastName: !last ? 'Last name is required.' : last.length > 120 ? 'Last name is too long.' : '',
       email: !isEmail(email) ? 'Enter a valid email address.' : '',
       password: String(password || '').length < 8 ? 'The password must be at least 8 characters.' : '',
-      passwordConfirmation: password !== passwordConfirmation ? 'The password confirmation does not match.' : '',
+      passwordConfirmation: password !== passwordConfirmation ? 'The passwords do not match.' : '',
     });
 
     if (await User.exists({ email: String(email).toLowerCase().trim() })) {
@@ -21,7 +25,7 @@ router.post(
     }
 
     // Public sign-up always creates a customer; admins are promoted from the admin panel.
-    const user = await User.create({ name, email, password, role: 'user' });
+    const user = await User.create({ name: `${first} ${last}`, email, password, role: 'user' });
     res.status(201).json({ token: signToken(user), user });
   }),
 );

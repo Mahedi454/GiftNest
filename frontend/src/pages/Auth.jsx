@@ -1,22 +1,66 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FieldError } from '../components/common.jsx';
+import { PasswordField, StrengthMeter, TextField } from '../components/Field.jsx';
+import Icon from '../components/Icon.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
-function useAuthForm(initial, submitFn) {
-  const [form, setForm] = useState(initial);
+function AuthShell({ asideTitle, asideText, points, children }) {
+  return (
+    <section className="auth2">
+      <div className="auth2__card">
+        <aside className="auth2__aside">
+          <Link className="auth2__brand" to="/">
+            <img src="/gift-svgrepo-com.svg" alt="" />
+            <span>GiftNest</span>
+          </Link>
+          <div className="auth2__asideBody">
+            <h2>{asideTitle}</h2>
+            <p>{asideText}</p>
+            <ul>
+              {points.map((point) => (
+                <li key={point}>
+                  <span><Icon name="check" width={2.6} /></span>
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+
+        <div className="auth2__main">{children}</div>
+      </div>
+    </section>
+  );
+}
+
+function SubmitButton({ busy, children, busyText }) {
+  return (
+    <button className="btn btn--lg auth2__submit" type="submit" disabled={busy}>
+      {busy && <i className="spinner" aria-hidden="true" />}
+      {busy ? busyText : children}
+    </button>
+  );
+}
+
+export function Login() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [form, setForm] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+
   const submit = async (event) => {
     event.preventDefault();
-    setBusy(true);
     setErrors({});
     setMessage('');
+    setBusy(true);
     try {
-      await submitFn(form);
+      const user = await login(form.email, form.password);
+      navigate(location.state?.from || (user.role === 'admin' ? '/admin' : '/'), { replace: true });
     } catch (error) {
       setErrors(error.errors || {});
       setMessage(error.message);
@@ -24,129 +68,129 @@ function useAuthForm(initial, submitFn) {
       setBusy(false);
     }
   };
-  return { form, set, submit, errors, message, busy };
-}
-
-export function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const { form, set, submit, message, busy } = useAuthForm({ email: '', password: '' }, async (values) => {
-    const user = await login(values.email, values.password);
-    navigate(location.state?.from || (user.role === 'admin' ? '/admin' : '/'), { replace: true });
-  });
 
   return (
-    <section className="section auth">
-      <div className="auth__shell">
-        <div className="auth__intro">
-          <div className="kicker">Authentication</div>
-          <h1>Login to GiftNest</h1>
-          <p className="lead">Use the standard GiftNest sign-in flow to access your orders or admin panel.</p>
-          <div className="auth__highlights">
-            <span className="chip">JWT authentication</span>
-            <span className="chip">Hashed passwords</span>
-            <span className="chip">Role-based redirect</span>
-          </div>
-        </div>
-
-        <div className="auth__card card">
-          <div className="auth__cardHead">
-            <h2>Sign in</h2>
-            <p className="muted">Use your account email and password.</p>
-          </div>
-
-          <form className="auth__form" onSubmit={submit}>
-            <label className="field">
-              <span className="field__label">Email</span>
-              <input className="input" type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" required autoFocus autoComplete="username" />
-            </label>
-            <label className="field">
-              <span className="field__label">Password</span>
-              <input className="input" type="password" value={form.password} onChange={set('password')} placeholder="Enter your password" required autoComplete="current-password" />
-            </label>
-            {message && <span className="muted">{message}</span>}
-            <button className="btn btn--full" type="submit" disabled={busy}>{busy ? 'Signing in...' : 'Login'}</button>
-          </form>
-
-          <div className="auth__bottom">
-            <span className="muted">Need an account?</span>
-            <Link className="link" to="/register">Create one</Link>
-          </div>
-        </div>
+    <AuthShell
+      asideTitle="Welcome back"
+      asideText="Sign in to pick up where you left off: your cart, your orders, and your saved details."
+      points={['Track your orders in one place', 'Checkout faster with saved details', 'Secure, password-protected account']}
+    >
+      <div className="auth2__head">
+        <h1>Sign in</h1>
+        <p>Enter your email and password to continue.</p>
       </div>
-    </section>
+
+      {message && !errors.email && <div className="auth2__alert" role="alert">{message}</div>}
+
+      <form className="auth2__form" onSubmit={submit} noValidate>
+        <TextField
+          label="Email"
+          type="email"
+          value={form.email}
+          onChange={set('email')}
+          placeholder="you@example.com"
+          autoComplete="username"
+          autoFocus
+          required
+          error={errors.email}
+        />
+        <PasswordField
+          label="Password"
+          value={form.password}
+          onChange={set('password')}
+          placeholder="Enter your password"
+          autoComplete="current-password"
+          required
+          error={errors.password}
+        />
+        <SubmitButton busy={busy} busyText="Signing in…">Sign in</SubmitButton>
+      </form>
+
+      <p className="auth2__switch">
+        New to GiftNest? <Link className="link" to="/register">Create an account</Link>
+      </p>
+    </AuthShell>
   );
 }
+
+const emptyForm = { firstName: '', lastName: '', email: '', password: '', passwordConfirmation: '' };
 
 export function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [form, setForm] = useState(emptyForm);
+  const [errors, setErrors] = useState({});
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  const { form, set, submit, errors, busy } = useAuthForm(
-    { name: '', email: '', password: '', passwordConfirmation: '' },
-    async (values) => {
-      await register(values);
+  const set = (key) => (e) => {
+    setForm({ ...form, [key]: e.target.value });
+    if (errors[key]) setErrors({ ...errors, [key]: undefined });
+  };
+
+  // Quick checks so people get instant feedback; the server validates again.
+  const check = () => {
+    const found = {};
+    if (!form.firstName.trim()) found.firstName = 'First name is required.';
+    if (!form.lastName.trim()) found.lastName = 'Last name is required.';
+    if (!/^\S+@\S+\.\S+$/.test(form.email)) found.email = 'Enter a valid email address.';
+    if (form.password.length < 8) found.password = 'Use at least 8 characters.';
+    if (form.password !== form.passwordConfirmation) found.passwordConfirmation = 'The passwords do not match.';
+    return found;
+  };
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setMessage('');
+    const found = check();
+    setErrors(found);
+    if (Object.keys(found).length) return;
+
+    setBusy(true);
+    try {
+      await register(form);
       navigate('/', { replace: true });
-    },
-  );
-  const errorList = Object.values(errors);
+    } catch (error) {
+      setErrors(error.errors || {});
+      setMessage(Object.keys(error.errors || {}).length ? '' : error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
-    <section className="section auth">
-      <div className="auth__shell">
-        <div className="auth__intro">
-          <div className="kicker">Create account</div>
-          <h1>Register your GiftNest account</h1>
-          <p className="lead">Create a customer account so you can shop, manage orders, and continue to checkout.</p>
-          <div className="auth__highlights">
-            <span className="chip">JWT authentication</span>
-            <span className="chip">Secure passwords</span>
-            <span className="chip">Order-ready account</span>
-          </div>
-        </div>
-
-        <div className="auth__card card">
-          <div className="auth__cardHead">
-            <h2>Create account</h2>
-            <p className="muted">Enter your details to register.</p>
-          </div>
-
-          {errorList.length > 0 && (
-            <div className="auth__errors">
-              <strong>Please fix these fields:</strong>
-              <ul>{errorList.map((error) => <li key={error}>{error}</li>)}</ul>
-            </div>
-          )}
-
-          <form className="auth__form" onSubmit={submit}>
-            <label className="field">
-              <span className="field__label">Name</span>
-              <input className="input" type="text" value={form.name} onChange={set('name')} required autoComplete="name" />
-              <FieldError errors={errors} name="name" />
-            </label>
-            <label className="field">
-              <span className="field__label">Email</span>
-              <input className="input" type="email" value={form.email} onChange={set('email')} required autoComplete="username" />
-            </label>
-            <label className="field">
-              <span className="field__label">Password</span>
-              <input className="input" type="password" value={form.password} onChange={set('password')} required minLength={8} autoComplete="new-password" />
-            </label>
-            <label className="field">
-              <span className="field__label">Confirm password</span>
-              <input className="input" type="password" value={form.passwordConfirmation} onChange={set('passwordConfirmation')} required autoComplete="new-password" />
-            </label>
-            <button className="btn btn--full" type="submit" disabled={busy}>{busy ? 'Creating...' : 'Create account'}</button>
-          </form>
-
-          <div className="auth__bottom">
-            <span className="muted">Already registered?</span>
-            <Link className="link" to="/login">Login</Link>
-          </div>
-        </div>
+    <AuthShell
+      asideTitle="Join GiftNest"
+      asideText="Create a free account to shop, place orders, and keep track of every gift you send."
+      points={['Order in a few clicks', 'Follow every order from your account', 'Your details stay private and secure']}
+    >
+      <div className="auth2__head">
+        <h1>Create your account</h1>
+        <p>It only takes a minute.</p>
       </div>
-    </section>
+
+      {message && <div className="auth2__alert" role="alert">{message}</div>}
+
+      <form className="auth2__form" onSubmit={submit} noValidate>
+        <div className="auth2__row">
+          <TextField label="First name" value={form.firstName} onChange={set('firstName')} autoComplete="given-name" autoFocus required error={errors.firstName} />
+          <TextField label="Last name" value={form.lastName} onChange={set('lastName')} autoComplete="family-name" required error={errors.lastName} />
+        </div>
+
+        <TextField label="Email" type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" autoComplete="email" required error={errors.email} />
+
+        <div className="auth2__row">
+          <PasswordField label="Password" value={form.password} onChange={set('password')} autoComplete="new-password" placeholder="At least 8 characters" required error={errors.password} />
+          <PasswordField label="Confirm password" value={form.passwordConfirmation} onChange={set('passwordConfirmation')} autoComplete="new-password" placeholder="Repeat the password" required error={errors.passwordConfirmation} />
+        </div>
+        <StrengthMeter value={form.password} />
+
+        <SubmitButton busy={busy} busyText="Creating account…">Create account</SubmitButton>
+      </form>
+
+      <p className="auth2__switch">
+        Already have an account? <Link className="link" to="/login">Sign in</Link>
+      </p>
+    </AuthShell>
   );
 }
