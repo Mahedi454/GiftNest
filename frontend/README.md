@@ -27,6 +27,10 @@ The frontend is its own Vercel project (the backend is a second one, see `backen
 4. Click **Deploy**.
 5. In the backend project, set `CLIENT_URL` to this frontend's address (for example `https://giftnest.vercel.app`) and redeploy the backend. Without this the browser blocks the requests.
 
+Shortcut: `vercel.json` already forwards `/api/...` requests to `https://giftnest-api.vercel.app` (edit that address if your
+backend project has a different one). With that in place the site works even if `VITE_API_URL` is not set, and no CORS
+setting is needed. Setting `VITE_API_URL` makes the browser call the backend directly instead.
+
 Notes:
 
 - `VITE_API_URL` is baked in when the site is built, so after changing it you must redeploy the frontend.
