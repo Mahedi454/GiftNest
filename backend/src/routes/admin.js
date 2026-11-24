@@ -2,10 +2,12 @@ import { Router } from 'express';
 import Category from '../models/Category.js';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import Review from '../models/Review.js';
 import User from '../models/User.js';
 import { requireAdmin, requireAuth } from '../middleware/auth.js';
 import { removeUploadedImage, uploadProductImage } from '../middleware/upload.js';
 import { HttpError, asyncHandler, pageResult, paginate, validate } from '../utils/http.js';
+import { shapeReview } from '../utils/reviews.js';
 
 const router = Router();
 router.use(requireAuth, requireAdmin);
@@ -15,11 +17,11 @@ const toBool = (value) => value === true || value === 'true' || value === '1' ||
 // ---------- Dashboard ----------
 router.get(
   '/stats',
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (req, res) => {
     // Look back a little further than 7 days so the client can fill the last 7 local days.
     const since = new Date(Date.now() - 9 * 24 * 60 * 60 * 1000);
 
-    const [users, customers, products, orders, revenue, statusRows, dailyRows, recentOrders, lowStock] = await Promise.all([
+    const [users, customers, products, orders, revenue, statusRows, dailyRows, recentOrders, lowStock, reviewRows, unanswered, latestReviews] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ role: 'user' }),
       Product.countDocuments(),
@@ -39,6 +41,9 @@ router.get(
       ]),
       Order.find().populate('user', 'name email').sort('-createdAt').limit(6),
       Product.find({ stock: { $lte: 5 } }).sort('stock').limit(6).select('name stock image isActive'),
+      Review.aggregate([{ $group: { _id: null, count: { $sum: 1 }, avg: { $avg: '$rating' } } }]),
+      Review.countDocuments({ 'replies.role': { $ne: 'admin' } }),
+      Review.find().populate('product', 'name image').populate('user', 'email').sort('-createdAt').limit(4),
     ]);
 
     const byStatus = Object.fromEntries(statusRows.map((row) => [row._id, row.count]));
@@ -55,6 +60,12 @@ router.get(
       daily: dailyRows.map((row) => ({ date: row._id, total: row.total, count: row.count })),
       recentOrders,
       lowStock,
+      reviews: {
+        count: reviewRows[0]?.count || 0,
+        average: reviewRows[0] ? Math.round(reviewRows[0].avg * 10) / 10 : 0,
+        unanswered,
+        latest: latestReviews.map((review) => shapeReview(review, req.user, { admin: true })),
+      },
     });
   }),
 );
@@ -155,6 +166,7 @@ router.delete(
     const product = await Product.findById(req.params.id);
     if (!product) throw new HttpError(404, 'That product could not be found.');
     await product.deleteOne();
+    await Review.deleteMany({ product: product._id });
     removeUploadedImage(product.image);
     res.json({ message: 'Product deleted successfully.' });
   }),
@@ -249,6 +261,39 @@ router.patch(
     const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true }).populate('user', 'name email');
     if (!order) throw new HttpError(404, 'That order could not be found.');
     res.json({ order });
+  }),
+);
+
+// ---------- Reviews ----------
+router.get(
+  '/reviews',
+  asyncHandler(async (req, res) => {
+    const { page, limit, skip } = paginate(req.query, { defaultLimit: 8 });
+    const filter = {};
+    if (req.query.filter === 'needs-reply') filter['replies.role'] = { $ne: 'admin' };
+    const rating = Number(req.query.rating);
+    if (Number.isInteger(rating) && rating >= 1 && rating <= 5) filter.rating = rating;
+
+    const [items, total, overall, unanswered] = await Promise.all([
+      Review.find(filter)
+        .populate('product', 'name image')
+        .populate('user', 'email')
+        .sort('-createdAt')
+        .skip(skip)
+        .limit(limit),
+      Review.countDocuments(filter),
+      Review.aggregate([{ $group: { _id: null, count: { $sum: 1 }, avg: { $avg: '$rating' } } }]),
+      Review.countDocuments({ 'replies.role': { $ne: 'admin' } }),
+    ]);
+
+    res.json({
+      ...pageResult(items.map((review) => shapeReview(review, req.user, { admin: true })), total, page, limit),
+      stats: {
+        total: overall[0]?.count || 0,
+        average: overall[0] ? Math.round(overall[0].avg * 10) / 10 : 0,
+        unanswered,
+      },
+    });
   }),
 );
 

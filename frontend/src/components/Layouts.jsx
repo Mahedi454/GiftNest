@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { initials } from '../api.js';
+import { api, initials } from '../api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import Icon from './Icon.jsx';
 import Footer from './Footer.jsx';
@@ -31,6 +31,7 @@ const adminLinks = [
   { to: '/admin/products', label: 'Products', icon: 'box' },
   { to: '/admin/categories', label: 'Categories', icon: 'tag' },
   { to: '/admin/orders', label: 'Orders', icon: 'receipt' },
+  { to: '/admin/reviews', label: 'Reviews', icon: 'chat', badge: true },
   { to: '/admin/users', label: 'Customers & users', icon: 'users' },
 ];
 
@@ -38,6 +39,7 @@ const sectionTitle = (pathname) => {
   if (pathname.startsWith('/admin/products')) return 'Products';
   if (pathname.startsWith('/admin/categories')) return 'Categories';
   if (pathname.startsWith('/admin/orders')) return 'Orders';
+  if (pathname.startsWith('/admin/reviews')) return 'Reviews';
   if (pathname.startsWith('/admin/users')) return 'Customers & users';
   return 'Dashboard';
 };
@@ -47,6 +49,7 @@ export function AdminLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [needReply, setNeedReply] = useState(0);
 
   // The existing stylesheet scopes admin styles to body.admin.
   useEffect(() => {
@@ -56,6 +59,19 @@ export function AdminLayout() {
   useEffect(() => {
     setMenuOpen(false);
     window.scrollTo(0, 0);
+  }, [pathname]);
+
+  // Count of reviews still waiting for a team reply, shown next to "Reviews".
+  useEffect(() => {
+    const refresh = () => {
+      api.get('/admin/reviews?limit=1')
+        .then((data) => setNeedReply(data.stats.unanswered))
+        .catch(() => {});
+    };
+    refresh();
+    // The reviews page announces when a reply or deletion changes the count.
+    window.addEventListener('reviews-changed', refresh);
+    return () => window.removeEventListener('reviews-changed', refresh);
   }, [pathname]);
 
   const signOut = () => {
@@ -78,6 +94,7 @@ export function AdminLayout() {
             <NavLink key={link.to} to={link.to} end={link.end}>
               <Icon name={link.icon} />
               {link.label}
+              {link.badge && needReply > 0 && <span className="adm__badge" title={`${needReply} waiting for a reply`}>{needReply}</span>}
             </NavLink>
           ))}
         </nav>

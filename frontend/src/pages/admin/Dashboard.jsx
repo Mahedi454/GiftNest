@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { api, assetUrl, formatDate, money } from '../../api.js';
+import { api, assetUrl, formatDate, initials, money, timeAgo } from '../../api.js';
 import { ErrorBox, useFetch } from '../../components/common.jsx';
 import Icon from '../../components/Icon.jsx';
+import { Stars } from '../../components/Stars.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const TZ = 'Asia/Dhaka';
@@ -122,7 +123,7 @@ export default function Dashboard() {
     );
   }
 
-  const { stats, daily, recentOrders, lowStock } = data;
+  const { stats, daily, recentOrders, lowStock, reviews } = data;
   const days = lastSevenDays(daily);
   const weekTotal = days.reduce((sum, d) => sum + d.total, 0);
   const weekOrders = days.reduce((sum, d) => sum + d.count, 0);
@@ -241,6 +242,41 @@ export default function Dashboard() {
                     {product.stock === 0 ? 'Sold out' : `${product.stock} left`}
                   </span>
                   <Link className="rlist__edit" to={`/admin/products/${product.id}/edit`}>Restock</Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+      </section>
+
+      <section className="dash__row dash__row--single">
+        <article className="panel">
+          <div className="panel__head">
+            <div>
+              <h2>Customer reviews</h2>
+              <p>
+                {reviews.count === 0
+                  ? 'Reviews from your customers will show up here.'
+                  : `${reviews.count} ${reviews.count === 1 ? 'review' : 'reviews'} · ${reviews.average.toFixed(1)} average · ${reviews.unanswered} waiting for a reply`}
+              </p>
+            </div>
+            <Link className="panel__link" to="/admin/reviews">Manage reviews</Link>
+          </div>
+
+          {reviews.latest.length === 0 ? (
+            <p className="panel__empty">No reviews yet. They will appear here once customers start rating your products.</p>
+          ) : (
+            <ul className="rlist rlist--reviews">
+              {reviews.latest.map((review) => (
+                <li key={review.id}>
+                  <span className="rlist__avatar">{initials(review.author)}</span>
+                  <span className="rlist__main">
+                    <strong>{review.author} <small>on {review.product?.name || 'a removed product'}</small></strong>
+                    <span className="rlist__stars"><Stars value={review.rating} size={14} /> <small>{timeAgo(review.createdAt)}</small></span>
+                    <span className="rlist__snippet">{review.comment}</span>
+                  </span>
+                  <span className={`pill2 ${review.hasTeamReply ? 'pill2--completed' : 'pill2--pending'}`}>{review.hasTeamReply ? 'Replied' : 'Needs reply'}</span>
+                  <Link className="rlist__edit" to="/admin/reviews">{review.hasTeamReply ? 'View' : 'Reply'}</Link>
                 </li>
               ))}
             </ul>

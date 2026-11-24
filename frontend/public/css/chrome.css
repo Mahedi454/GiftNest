@@ -315,14 +315,15 @@
 .foot {
   position: relative;
   margin-top: 40px;
-  color: #b9c8cf;
-  background: linear-gradient(180deg, #1a2a31 0%, #111c21 100%);
+  color: var(--muted);
+  background: linear-gradient(180deg, #ffffff 0%, #fff3f8 100%);
+  border-top: 1px solid rgba(255, 62, 155, .14);
 }
 .foot::before {
   content: '';
   position: absolute;
-  inset: 0 0 auto 0;
-  height: 4px;
+  inset: -1px 0 auto 0;
+  height: 3px;
   background: linear-gradient(90deg, var(--accent), #ff7ab8 40%, var(--accent2));
 }
 .foot__inner {
@@ -339,7 +340,7 @@
   font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: -.03em;
-  color: #fff;
+  color: var(--text);
 }
 .foot__logo img {
   width: 40px;
@@ -349,7 +350,7 @@
   max-width: 34ch;
   margin: 16px 0 22px;
   line-height: 1.7;
-  color: #9db0b9;
+  color: var(--muted);
 }
 .foot__cta {
   display: inline-flex;
@@ -381,7 +382,7 @@
   font-weight: 800;
   letter-spacing: .14em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--text);
 }
 .foot__col a,
 .foot__col button {
@@ -391,13 +392,13 @@
   font: inherit;
   font-size: 15px;
   text-align: left;
-  color: #9db0b9;
+  color: var(--muted);
   cursor: pointer;
   transition: color .2s ease, transform .2s ease;
 }
 .foot__col a:hover,
 .foot__col button:hover {
-  color: #fff;
+  color: var(--accent);
   transform: translateX(4px);
 }
 .foot__bottom {
@@ -409,7 +410,7 @@
   padding: 22px 0 28px;
   font-size: 13.5px;
   color: #7d909a;
-  border-top: 1px solid rgba(255, 255, 255, .08);
+  border-top: 1px solid rgba(58, 139, 149, .14);
 }
 
 /* =========================================================

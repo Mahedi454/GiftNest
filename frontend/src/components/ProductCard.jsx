@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { assetUrl, money } from '../api.js';
+import { Stars } from './Stars.jsx';
 
 // Whole prices read cleaner without ".00".
 const price = (value) => money(value, Number.isInteger(value) ? 0 : 2);
@@ -32,6 +33,13 @@ export default function ProductCard({ product, index = 0 }) {
 
       <div className="pcard__body">
         <h3 className="pcard__title"><Link to={url}>{product.name}</Link></h3>
+        {product.ratingCount > 0 && (
+          <Link className="pcard__rating" to={`${url}#reviews`} aria-label={`${product.ratingAvg} out of 5 from ${product.ratingCount} reviews`}>
+            <Stars value={product.ratingAvg} size={14} />
+            <span>{product.ratingAvg.toFixed(1)}</span>
+            <small>({product.ratingCount})</small>
+          </Link>
+        )}
         <p className="pcard__desc">{product.description}</p>
 
         <div className="pcard__foot">

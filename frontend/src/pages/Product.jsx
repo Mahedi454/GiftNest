@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { api, assetUrl, money } from '../api.js';
 import { ErrorBox, NotFound, useFetch } from '../components/common.jsx';
 import ProductCard from '../components/ProductCard.jsx';
+import Reviews from '../components/Reviews.jsx';
+import { Stars } from '../components/Stars.jsx';
 import { useCart } from '../context/CartContext.jsx';
 
 const perks = [
@@ -31,6 +33,7 @@ export default function Product() {
   const { add } = useCart();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [summary, setSummary] = useState(null);
   const { data, error, loading } = useFetch(() => api.get(`/products/${id}`), [id]);
 
   if (loading) return <DetailSkeleton />;
@@ -79,6 +82,18 @@ export default function Product() {
           </div>
 
           <h1>{product.name}</h1>
+
+          {(() => {
+            const avg = summary ? summary.average : product.ratingAvg || 0;
+            const count = summary ? summary.count : product.ratingCount || 0;
+            return (
+              <a className="pd__rating" href="#reviews">
+                <Stars value={avg} size={20} />
+                {count > 0 ? <span><strong>{avg.toFixed(1)}</strong> · {count} {count === 1 ? 'review' : 'reviews'}</span> : <span>Be the first to review</span>}
+              </a>
+            );
+          })()}
+
           <p className="pd__desc">{product.description}</p>
 
           <div className="pd__price">{money(product.price, Number.isInteger(product.price) ? 0 : 2)}</div>
@@ -106,6 +121,8 @@ export default function Product() {
           <Link className="link" to="/shop">← Back to shop</Link>
         </div>
       </section>
+
+      <Reviews productId={product.id} onSummary={setSummary} />
 
       {relatedProducts.length > 0 && (
         <section className="home-section">

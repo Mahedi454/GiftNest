@@ -59,3 +59,27 @@ export const initials = (name = '') =>
 
 export const formatDate = (iso, withDay = true) =>
   new Date(iso).toLocaleDateString('en-GB', { day: withDay ? '2-digit' : undefined, month: 'short', year: 'numeric' });
+
+// "3 days ago" style timestamps; falls back to a date for anything older than a month.
+export function timeAgo(iso) {
+  const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 45) return 'just now';
+  if (seconds > 60 * 60 * 24 * 30) return formatDate(iso);
+
+  const steps = [
+    ['minute', 60],
+    ['hour', 60 * 60],
+    ['day', 60 * 60 * 24],
+    ['week', 60 * 60 * 24 * 7],
+  ];
+  let label = 'minute';
+  let size = 60;
+  for (const [name, length] of steps) {
+    if (seconds >= length) {
+      label = name;
+      size = length;
+    }
+  }
+  const n = Math.max(1, Math.floor(seconds / size));
+  return `${n} ${label}${n === 1 ? '' : 's'} ago`;
+}

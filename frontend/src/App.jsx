@@ -15,6 +15,7 @@ import Shop from './pages/Shop.jsx';
 import AdminCategories from './pages/admin/Categories.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
 import AdminOrders from './pages/admin/Orders.jsx';
+import AdminReviews from './pages/admin/Reviews.jsx';
 import ProductForm from './pages/admin/ProductForm.jsx';
 import AdminProducts from './pages/admin/Products.jsx';
 import AdminUsers from './pages/admin/Users.jsx';
@@ -61,6 +62,7 @@ export default function App() {
         <Route path="products/:id/edit" element={<ProductForm />} />
         <Route path="categories" element={<AdminCategories />} />
         <Route path="orders" element={<AdminOrders />} />
+        <Route path="reviews" element={<AdminReviews />} />
         <Route path="users" element={<AdminUsers />} />
       </Route>
     </Routes>

@@ -52,8 +52,8 @@ Render's free disk is ephemeral, so images uploaded from the admin panel are los
 
 ```text
 src/index.js        App entry
-src/models/         User, Category, Product, Order
-src/routes/         auth, catalog, orders, profile, admin
+src/models/         User, Category, Product, Order, Review
+src/routes/         auth, catalog, orders, reviews, profile, admin
 src/middleware/     auth/roles, image upload, error handling
 src/seed.js         Sample categories and products
 src/createAdmin.js  Creates the administrator account
@@ -68,5 +68,6 @@ uploads/            Images uploaded from the admin panel
 | Auth     | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`                           |
 | Catalog  | `GET /api/products` (`search`, `category`, `page`), `/api/products/home`, `/api/products/:id`, `/api/categories` |
 | Orders   | `POST /api/orders`, `GET /api/orders/mine`, `GET /api/orders/:id`                               |
+| Reviews  | `GET/POST /api/products/:id/reviews`, `PUT/DELETE /api/reviews/:id`, `POST /api/reviews/:id/replies`, `DELETE /api/reviews/:id/replies/:replyId` |
 | Profile  | `PUT /api/profile`, `PUT /api/profile/password`, `DELETE /api/profile`                          |
-| Admin    | `/api/admin/stats`, `/products`, `/categories`, `/orders`, `/users` (admin role required)       |
+| Admin    | `/api/admin/stats`, `/products`, `/categories`, `/orders`, `/reviews`, `/users` (admin role required)       |

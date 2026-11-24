@@ -29,3 +29,18 @@ export const requireAdmin = (req, _res, next) => {
   if (req.user?.role !== 'admin') return next(new HttpError(403, 'You do not have permission to do that.'));
   next();
 };
+
+// For public routes: attaches req.user when a valid token is sent, and carries on either way.
+export const optionalAuth = asyncHandler(async (req, _res, next) => {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (token) {
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = (await User.findById(payload.sub)) || undefined;
+    } catch {
+      req.user = undefined;
+    }
+  }
+  next();
+});

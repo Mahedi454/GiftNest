@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import catalogRoutes from './routes/catalog.js';
 import orderRoutes from './routes/orders.js';
 import profileRoutes from './routes/profile.js';
+import reviewRoutes from './routes/reviews.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -33,6 +34,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api', reviewRoutes);
 app.use('/api', catalogRoutes);
 
 app.use(notFound);

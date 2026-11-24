@@ -11,6 +11,9 @@ const productSchema = new mongoose.Schema(
     image: { type: String, default: '' },
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     isActive: { type: Boolean, default: true },
+    // Kept up to date whenever a review is added, edited or removed.
+    ratingAvg: { type: Number, default: 0, min: 0, max: 5 },
+    ratingCount: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true },
 );
