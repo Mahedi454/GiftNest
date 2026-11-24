@@ -9,6 +9,15 @@ import { useCart } from '../context/CartContext.jsx';
 
 const heroTags = ['Best Seller', 'Elegant', 'Romantic'];
 
+const tickerItems = [
+  'Curated gifts for every occasion',
+  'Ships within 24 hours',
+  'Secure checkout',
+  'Follow every order from your account',
+  'Read real customer reviews',
+  'Birthdays · Anniversaries · Graduation · Housewarming',
+];
+
 const occasions = [
   { title: 'Birthdays', note: 'Boxes, lamps and mugs', search: 'birthday', icon: 'cake', tint: '#ffe3f0' },
   { title: 'Love & romance', note: 'Candles, roses, notes', search: 'love', icon: 'heart', tint: '#ffe9ec' },
@@ -16,12 +25,6 @@ const occasions = [
   { title: 'Family & home', note: 'Frames and wall art', search: 'family', icon: 'home', tint: '#fff0dc' },
   { title: 'Couples', note: 'Made for two', search: 'couple', icon: 'star', tint: '#efe6ff' },
   { title: 'Little ones', note: 'Baby and kids gifts', search: 'baby', icon: 'gift', tint: '#e1f1fb' },
-];
-
-const whyCards = [
-  { icon: 'search', title: 'Browse curated picks', text: 'A carefully chosen collection of gifts for birthdays, graduations and everyday surprises, with no clutter.' },
-  { icon: 'bag', title: 'Add to cart in seconds', text: 'Save your favorites in the cart and adjust quantities any time before you check out.' },
-  { icon: 'truck', title: 'Place a smooth order', text: 'Enter your delivery details, place the order, and follow its progress from your account.' },
 ];
 
 function SectionHead({ kicker, title, children }) {
@@ -176,18 +179,20 @@ export default function Home() {
         )}
       </section>
 
-      <section className="home-section">
-        <SectionHead kicker="Why GiftNest" title="Gifting made simple, from first look to doorstep" />
-        <div className="grid grid--3">
-          {whyCards.map((card) => (
-            <article className="why-card" key={card.title}>
-              <span className="why-card__icon"><Icon name={card.icon} /></span>
-              <h3>{card.title}</h3>
-              <p>{card.text}</p>
-            </article>
+      <div className="ticker" role="region" aria-label="GiftNest highlights">
+        <div className="ticker__track">
+          {[0, 1].map((copy) => (
+            <ul className="ticker__group" key={copy} aria-hidden={copy === 1}>
+              {tickerItems.map((item) => (
+                <li key={item}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0l2.4 9.6L24 12l-9.6 2.4L12 24l-2.4-9.6L0 12l9.6-2.4L12 0Z" /></svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
           ))}
         </div>
-      </section>
+      </div>
 
       <section className="home-section">
         <SectionHead kicker="Shop by occasion" title="Whatever you are celebrating, start here" />
